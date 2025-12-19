@@ -10,6 +10,7 @@ interface GameBoardProps {
   onDragLeave: () => void;
   onTileDragStart?: (e: React.DragEvent, tile: Tile, row: number, col: number) => void;
   onTileDragEnd?: () => void;
+  onTileTouchStart?: (e: React.TouchEvent, tile: Tile, row: number, col: number) => void;
   draggingTileId?: string | null;
 }
 
@@ -32,6 +33,7 @@ export function GameBoard({
   onDragLeave,
   onTileDragStart,
   onTileDragEnd,
+  onTileTouchStart,
   draggingTileId,
 }: GameBoardProps) {
   return (
@@ -48,6 +50,8 @@ export function GameBoard({
               <div
                 key={`${rowIndex}-${colIndex}`}
                 className={`board-cell ${cell.bonus} ${isDragOver ? 'drag-over' : ''} ${cell.isNewlyPlaced ? 'newly-placed' : ''}`}
+                data-row={rowIndex}
+                data-col={colIndex}
                 onDrop={() => onDropTile(rowIndex, colIndex)}
                 onDragOver={(e) => {
                   e.preventDefault();
@@ -61,6 +65,7 @@ export function GameBoard({
                     isDragging={isDragging}
                     onDragStart={cell.isNewlyPlaced ? (e, tile) => onTileDragStart?.(e, tile, rowIndex, colIndex) : undefined}
                     onDragEnd={cell.isNewlyPlaced ? onTileDragEnd : undefined}
+                    onTouchStart={cell.isNewlyPlaced ? (e, tile) => onTileTouchStart?.(e, tile, rowIndex, colIndex) : undefined}
                   />
                 ) : (
                   <span className="bonus-label">{getBonusLabel(cell.bonus)}</span>

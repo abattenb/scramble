@@ -8,9 +8,10 @@ interface TileProps {
   onDragStart?: (e: React.DragEvent, tile: Tile) => void;
   onDragEnd?: (e: React.DragEvent) => void;
   onClick?: (tile: Tile) => void;
+  onTouchStart?: (e: React.TouchEvent, tile: Tile) => void;
 }
 
-export function TileComponent({ tile, isDragging, isSelected, onDragStart, onDragEnd, onClick }: TileProps) {
+export function TileComponent({ tile, isDragging, isSelected, onDragStart, onDragEnd, onClick, onTouchStart }: TileProps) {
   return (
     <div
       className={`tile ${isDragging ? 'dragging' : ''} ${tile.isBlank ? 'blank' : ''} ${isSelected ? 'selected' : ''}`}
@@ -18,6 +19,7 @@ export function TileComponent({ tile, isDragging, isSelected, onDragStart, onDra
       onDragStart={(e) => onDragStart?.(e, tile)}
       onDragEnd={(e) => onDragEnd?.(e)}
       onClick={() => onClick?.(tile)}
+      onTouchStart={(e) => onTouchStart?.(e, tile)}
     >
       <span className="tile-letter">{tile.isBlank ? '?' : tile.letter}</span>
       <span className="tile-points">{tile.points}</span>

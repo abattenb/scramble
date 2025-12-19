@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Tile, Player, GameState, PlacedTile } from './types';
 import { createTileBag, drawTiles } from './data/tiles';
 import { createEmptyBoard } from './data/board';
@@ -88,6 +88,9 @@ function App() {
   // Exchange tiles state
   const [exchangeMode, setExchangeMode] = useState(false);
   const [selectedForExchange, setSelectedForExchange] = useState<Set<string>>(new Set());
+  
+  // Track if tile is being dragged from board (vs rack)
+  const [dragSourceCell, setDragSourceCell] = useState<{ row: number; col: number } | null>(null);
 
   // Auto-dismiss message after 5 seconds
   useEffect(() => {
@@ -111,6 +114,9 @@ function App() {
     saveGameState(gameState);
   }, [gameState]);
 
+  // Ref to store handleDropTile for use in touch handlers
+  const handleDropTileRef = useRef<((row: number, col: number) => void) | null>(null);
+
   // Track mouse/touch position during drag
   useEffect(() => {
     if (!draggingTile) return;
@@ -120,22 +126,47 @@ function App() {
     };
 
     const handleTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
       if (e.touches.length > 0) {
-        setDragPosition({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+        const touch = e.touches[0];
+        setDragPosition({ x: touch.clientX, y: touch.clientY });
+        
+        // Find which cell we're over
+        const element = document.elementFromPoint(touch.clientX, touch.clientY);
+        const cell = element?.closest('.board-cell') as HTMLElement;
+        if (cell) {
+          const row = parseInt(cell.dataset.row || '-1');
+          const col = parseInt(cell.dataset.col || '-1');
+          if (row >= 0 && col >= 0) {
+            setDragOverCell({ row, col });
+          }
+        } else {
+          setDragOverCell(null);
+        }
       }
     };
 
+    const handleTouchEnd = () => {
+      const currentDragOverCell = dragOverCell;
+      if (currentDragOverCell && handleDropTileRef.current) {
+        handleDropTileRef.current(currentDragOverCell.row, currentDragOverCell.col);
+      }
+      setDraggingTile(null);
+      setDragPosition(null);
+      setDragOverCell(null);
+      setDragSourceCell(null);
+    };
+
     document.addEventListener('dragover', handleDragOver);
-    document.addEventListener('touchmove', handleTouchMove);
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
 
     return () => {
       document.removeEventListener('dragover', handleDragOver);
       document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [draggingTile]);
-
-  // Track if tile is being dragged from board (vs rack)
-  const [dragSourceCell, setDragSourceCell] = useState<{ row: number; col: number } | null>(null);
+  }, [draggingTile, dragOverCell]);
 
   const handleDragStart = useCallback((e: React.DragEvent, tile: Tile) => {
     // This is from the rack - allow drag
@@ -148,6 +179,23 @@ function App() {
     const emptyImg = document.createElement('img');
     emptyImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
     e.dataTransfer.setDragImage(emptyImg, 0, 0);
+  }, []);
+
+  // Touch handlers for mobile drag and drop
+  const handleTouchStart = useCallback((e: React.TouchEvent, tile: Tile) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    setDraggingTile(tile);
+    setDragPosition({ x: touch.clientX, y: touch.clientY });
+    setDragSourceCell(null);
+  }, []);
+
+  const handleBoardTileTouchStart = useCallback((e: React.TouchEvent, tile: Tile, row: number, col: number) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    setDraggingTile(tile);
+    setDragPosition({ x: touch.clientX, y: touch.clientY });
+    setDragSourceCell({ row, col });
   }, []);
 
   const handleBoardTileDragStart = useCallback((e: React.DragEvent, tile: Tile, row: number, col: number) => {
@@ -257,6 +305,11 @@ function App() {
     setDragSourceCell(null);
     setMessage(null);
   }, [draggingTile, gameState.board, dragSourceCell]);
+
+  // Keep ref updated with latest handleDropTile
+  useEffect(() => {
+    handleDropTileRef.current = handleDropTile;
+  }, [handleDropTile]);
 
   const handleRecallTiles = useCallback(() => {
     setGameState((prev) => {
@@ -497,6 +550,7 @@ function App() {
               onDragLeave={handleDragLeave}
               onTileDragStart={handleBoardTileDragStart}
               onTileDragEnd={handleDragEnd}
+              onTileTouchStart={handleBoardTileTouchStart}
               draggingTileId={draggingTile?.id ?? null}
             />
 
@@ -578,6 +632,7 @@ function App() {
                 isCurrentPlayer={index === gameState.currentPlayerIndex}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
+                onTouchStart={handleTouchStart}
                 draggingTileId={draggingTile?.id ?? null}
                 exchangeMode={index === gameState.currentPlayerIndex && exchangeMode}
                 selectedForExchange={selectedForExchange}

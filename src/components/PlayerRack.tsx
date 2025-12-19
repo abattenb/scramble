@@ -9,6 +9,7 @@ interface PlayerRackProps {
   isCurrentPlayer: boolean;
   onDragStart: (e: React.DragEvent, tile: Tile) => void;
   onDragEnd: (e: React.DragEvent) => void;
+  onTouchStart: (e: React.TouchEvent, tile: Tile) => void;
   draggingTileId: string | null;
   exchangeMode: boolean;
   selectedForExchange: Set<string>;
@@ -26,6 +27,7 @@ export function PlayerRack({
   isCurrentPlayer, 
   onDragStart, 
   onDragEnd,
+  onTouchStart,
   draggingTileId,
   exchangeMode,
   selectedForExchange,
@@ -80,6 +82,7 @@ export function PlayerRack({
             isSelected={selectedForExchange.has(tile.id)}
             onDragStart={exchangeMode ? undefined : onDragStart}
             onDragEnd={exchangeMode ? undefined : onDragEnd}
+            onTouchStart={exchangeMode ? undefined : onTouchStart}
             onClick={exchangeMode ? onToggleTileSelection : undefined}
           />
         ))}
