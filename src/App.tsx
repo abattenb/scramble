@@ -9,6 +9,7 @@ import { PlayerRack } from './components/PlayerRack';
 import './App.css';
 
 const STORAGE_KEY = 'scramble-game-state';
+const PLAYER_NAMES_KEY = 'scramble-player-names';
 
 // Count remaining tiles by letter
 function countTilesByLetter(tiles: Tile[]): Map<string, number> {
@@ -48,7 +49,27 @@ function clearGameState(): void {
   }
 }
 
-function initializeGame(): GameState {
+function savePlayerNames(names: { player1: string; player2: string }): void {
+  try {
+    localStorage.setItem(PLAYER_NAMES_KEY, JSON.stringify(names));
+  } catch (error) {
+    console.error('Failed to save player names:', error);
+  }
+}
+
+function loadPlayerNames(): { player1: string; player2: string } {
+  try {
+    const saved = localStorage.getItem(PLAYER_NAMES_KEY);
+    if (saved) {
+      return JSON.parse(saved) as { player1: string; player2: string };
+    }
+  } catch (error) {
+    console.error('Failed to load player names:', error);
+  }
+  return { player1: 'Player 1', player2: 'Player 2' };
+}
+
+function initializeGame(player1Name: string, player2Name: string): GameState {
   const tileBag = createTileBag();
   
   // Draw 7 tiles for each player
@@ -56,8 +77,8 @@ function initializeGame(): GameState {
   const { drawn: player2Tiles, remaining: finalBag } = drawTiles(bag1, 7);
   
   const players: [Player, Player] = [
-    { id: 1, name: 'Player 1', score: 0, rack: player1Tiles },
-    { id: 2, name: 'Player 2', score: 0, rack: player2Tiles },
+    { id: 1, name: player1Name || 'Player 1', score: 0, rack: player1Tiles },
+    { id: 2, name: player2Name || 'Player 2', score: 0, rack: player2Tiles },
   ];
   
   return {
@@ -78,9 +99,10 @@ type GamePhase = 'start' | 'playing' | 'gameOver';
 
 function App() {
   const [gameState, setGameState] = useState<GameState>(() => {
-    // Try to load saved game state, otherwise initialize new game
+    // Try to load saved game state, otherwise initialize with default names
     const saved = loadGameState();
-    return saved || initializeGame();
+    const names = loadPlayerNames();
+    return saved || initializeGame(names.player1, names.player2);
   });
   const [gamePhase, setGamePhase] = useState<GamePhase>(() => {
     // Determine initial phase based on saved game state
@@ -89,6 +111,9 @@ function App() {
     if (saved.gameOver) return 'gameOver';
     return 'playing';
   });
+  // Player names for the start modal
+  const [player1Name, setPlayer1Name] = useState<string>(() => loadPlayerNames().player1);
+  const [player2Name, setPlayer2Name] = useState<string>(() => loadPlayerNames().player2);
   const [draggingTile, setDraggingTile] = useState<Tile | null>(null);
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
   const [dragOverCell, setDragOverCell] = useState<{ row: number; col: number } | null>(null);
@@ -584,8 +609,13 @@ function App() {
   }, [selectedForExchange, gameState.tileBag.length]);
 
   const handleStartGame = useCallback(() => {
+    // Save player names for future sessions
+    const name1 = player1Name.trim() || 'Player 1';
+    const name2 = player2Name.trim() || 'Player 2';
+    savePlayerNames({ player1: name1, player2: name2 });
+    
     clearGameState();
-    const newGame = initializeGame();
+    const newGame = initializeGame(name1, name2);
     setGameState(newGame);
     setGamePhase('playing');
     setDraggingTile(null);
@@ -595,7 +625,7 @@ function App() {
     setExchangeMode(false);
     setSelectedForExchange(new Set());
     setMessage(null);
-  }, []);
+  }, [player1Name, player2Name]);
 
   const handleNewGame = useCallback(() => {
     // Show start modal when clicking New Game
@@ -610,6 +640,30 @@ function App() {
           <div className="modal">
             <h2>Welcome to Scramble!</h2>
             <p>A word game for 2 players</p>
+            <div className="player-name-inputs">
+              <div className="player-name-field">
+                <label htmlFor="player1-name">Player 1</label>
+                <input
+                  id="player1-name"
+                  type="text"
+                  value={player1Name}
+                  onChange={(e) => setPlayer1Name(e.target.value)}
+                  placeholder="Player 1"
+                  maxLength={20}
+                />
+              </div>
+              <div className="player-name-field">
+                <label htmlFor="player2-name">Player 2</label>
+                <input
+                  id="player2-name"
+                  type="text"
+                  value={player2Name}
+                  onChange={(e) => setPlayer2Name(e.target.value)}
+                  placeholder="Player 2"
+                  maxLength={20}
+                />
+              </div>
+            </div>
             <button onClick={handleStartGame} className="start-game-btn">
               Start Game
             </button>
@@ -624,7 +678,7 @@ function App() {
       )}
 
       <header className="header">
-        <h1>Scramble <span className="version">v1.2.0</span></h1>
+        <h1>Scramble <span className="version">v1.3.0</span></h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
             New Game

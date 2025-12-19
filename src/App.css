@@ -671,3 +671,43 @@ body {
 .start-game-btn:active {
   transform: translateY(0);
 }
+
+/* Player name inputs in modal */
+.player-name-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.player-name-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.player-name-field label {
+  font-size: 14px;
+  color: #c8b896;
+  font-weight: bold;
+}
+
+.player-name-field input {
+  padding: 12px 16px;
+  font-size: 16px;
+  border: 2px solid #8b4513;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #f5deb3;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.player-name-field input:focus {
+  border-color: #ffd700;
+}
+
+.player-name-field input::placeholder {
+  color: #8b7355;
+}
