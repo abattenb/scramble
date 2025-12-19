@@ -14,6 +14,7 @@ const GAME_SETTINGS_KEY = 'scramble-game-settings';
 
 interface GameSettings {
   expertMode: boolean;
+  hidePlayerTiles: boolean;
 }
 
 function saveGameSettings(settings: GameSettings): void {
@@ -25,15 +26,18 @@ function saveGameSettings(settings: GameSettings): void {
 }
 
 function loadGameSettings(): GameSettings {
+  const defaults: GameSettings = { expertMode: false, hidePlayerTiles: false };
   try {
     const saved = localStorage.getItem(GAME_SETTINGS_KEY);
     if (saved) {
-      return JSON.parse(saved) as GameSettings;
+      const parsed = JSON.parse(saved);
+      // Merge with defaults to ensure all properties are defined
+      return { ...defaults, ...parsed };
     }
   } catch (error) {
     console.error('Failed to load game settings:', error);
   }
-  return { expertMode: false };
+  return defaults;
 }
 
 // Count remaining tiles by letter
@@ -147,6 +151,7 @@ function App() {
   const [player2Name, setPlayer2Name] = useState<string>(() => loadPlayerNames().player2);
   // Game settings
   const [expertMode, setExpertMode] = useState<boolean>(() => loadGameSettings().expertMode);
+  const [hidePlayerTiles, setHidePlayerTiles] = useState<boolean>(() => loadGameSettings().hidePlayerTiles);
   const [draggingTile, setDraggingTile] = useState<Tile | null>(null);
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
   const [dragOverCell, setDragOverCell] = useState<{ row: number; col: number } | null>(null);
@@ -691,8 +696,8 @@ function App() {
     const name1 = player1Name.trim() || 'Player 1';
     const name2 = player2Name.trim() || 'Player 2';
     savePlayerNames({ player1: name1, player2: name2 });
-    saveGameSettings({ expertMode });
-    
+    saveGameSettings({ expertMode, hidePlayerTiles });
+
     clearGameState();
     const newGame = initializeGame(name1, name2);
     setGameState(newGame);
@@ -704,7 +709,7 @@ function App() {
     setExchangeMode(false);
     setSelectedForExchange(new Set());
     setMessage(null);
-  }, [player1Name, player2Name, expertMode]);
+  }, [player1Name, player2Name, expertMode, hidePlayerTiles]);
 
   const handleNewGame = useCallback(() => {
     // Show start modal when clicking New Game
@@ -772,6 +777,18 @@ function App() {
                   <span className="toggle-subtext">Wrong word ends turn</span>
                 </span>
               </label>
+              <label className="toggle-setting">
+                <input
+                  type="checkbox"
+                  checked={hidePlayerTiles}
+                  onChange={(e) => setHidePlayerTiles(e.target.checked)}
+                />
+                <span className="toggle-slider"></span>
+                <span className="toggle-label">
+                  Hide Player Tiles
+                  <span className="toggle-subtext">Show ready prompt between turns</span>
+                </span>
+              </label>
             </div>
             <button onClick={handleStartGame} className="start-game-btn">
               Start Game
@@ -787,7 +804,7 @@ function App() {
       )}
 
       <header className="header">
-        <h1>Scramble <span className="version">v1.11.0</span></h1>
+        <h1>Scramble <span className="version">v1.12.0</span></h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
             New Game
@@ -901,10 +918,10 @@ function App() {
             // Determine rack state
             // Only obscure the rack of the player whose turn it is NOT
             const isCurrentPlayer = gameState.currentPlayerIndex === index;
-            // Show Ready button overlay if it's the current player's turn, but rackRevealState is not yet updated
-            const showReadyButton = rackRevealState.readyPending && isCurrentPlayer && rackRevealState.activeRack !== index;
-            // Obscure rack if not the current player OR if showing Ready button (hide tiles until Ready is clicked)
-            const isObscuredRack = !isCurrentPlayer || showReadyButton;
+            // Show Ready button overlay if hidePlayerTiles is enabled and it's the current player's turn, but rackRevealState is not yet updated
+            const showReadyButton = hidePlayerTiles && rackRevealState.readyPending && isCurrentPlayer && rackRevealState.activeRack !== index;
+            // Obscure rack only if hidePlayerTiles is enabled and (not current player OR showing Ready button)
+            const isObscuredRack = (hidePlayerTiles && !isCurrentPlayer) || showReadyButton;
             // If obscured, blank out tiles and points
             const rackTiles = isObscuredRack
               ? player.rack.map((t) => ({ ...t, letter: '', points: 0, isBlank: false }))
