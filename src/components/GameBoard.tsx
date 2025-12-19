@@ -1,0 +1,63 @@
+import type { BoardCell } from '../types';
+import { TileComponent } from './Tile';
+import './GameBoard.css';
+
+interface GameBoardProps {
+  board: BoardCell[][];
+  onDropTile: (row: number, col: number) => void;
+  dragOverCell: { row: number; col: number } | null;
+  onDragOver: (e: React.DragEvent, row: number, col: number) => void;
+  onDragLeave: () => void;
+}
+
+function getBonusLabel(bonus: BoardCell['bonus']): string {
+  switch (bonus) {
+    case 'triple-word': return 'TW';
+    case 'double-word': return 'DW';
+    case 'triple-letter': return 'TL';
+    case 'double-letter': return 'DL';
+    case 'center': return '★';
+    default: return '';
+  }
+}
+
+export function GameBoard({ 
+  board, 
+  onDropTile, 
+  dragOverCell, 
+  onDragOver, 
+  onDragLeave 
+}: GameBoardProps) {
+  return (
+    <div className="game-board">
+      {board.map((row, rowIndex) => (
+        <div key={rowIndex} className="board-row">
+          {row.map((cell, colIndex) => {
+            const isDragOver = 
+              dragOverCell?.row === rowIndex && 
+              dragOverCell?.col === colIndex;
+            
+            return (
+              <div
+                key={`${rowIndex}-${colIndex}`}
+                className={`board-cell ${cell.bonus} ${isDragOver ? 'drag-over' : ''} ${cell.isNewlyPlaced ? 'newly-placed' : ''}`}
+                onDrop={() => onDropTile(rowIndex, colIndex)}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  onDragOver(e, rowIndex, colIndex);
+                }}
+                onDragLeave={onDragLeave}
+              >
+                {cell.tile ? (
+                  <TileComponent tile={cell.tile} />
+                ) : (
+                  <span className="bonus-label">{getBonusLabel(cell.bonus)}</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
