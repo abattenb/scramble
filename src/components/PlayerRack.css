@@ -38,10 +38,28 @@
 
 .rack-tiles {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   justify-content: center;
-  min-height: 44px;
+  min-height: 60px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 4px;
-  padding: 8px;
+  padding: 10px;
+  /* Fixed width for 7 tiles: 7*56px + 6*10px gaps + 2*10px padding = 472px */
+  width: 472px;
+}
+
+/* Larger tiles in rack for touch controls */
+.rack-tiles .tile {
+  width: 56px;
+  height: 56px;
+}
+
+.rack-tiles .tile-letter {
+  font-size: 28px;
+}
+
+.rack-tiles .tile-points {
+  font-size: 12px;
+  bottom: 3px;
+  right: 5px;
 }

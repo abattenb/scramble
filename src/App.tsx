@@ -8,6 +8,16 @@ import { GameBoard } from './components/GameBoard';
 import { PlayerRack } from './components/PlayerRack';
 import './App.css';
 
+// Count remaining tiles by letter
+function countTilesByLetter(tiles: Tile[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const tile of tiles) {
+    const letter = tile.isBlank ? '?' : tile.letter;
+    counts.set(letter, (counts.get(letter) || 0) + 1);
+  }
+  return counts;
+}
+
 function initializeGame(): GameState {
   const tileBag = createTileBag();
   
@@ -250,8 +260,6 @@ function App() {
       <header className="header">
         <h1>Scramble</h1>
         <div className="game-info">
-          <span>Tiles remaining: {gameState.tileBag.length}</span>
-          <span>Turn: {gameState.turnNumber}</span>
           <button onClick={handleNewGame} className="new-game-btn">
             New Game
           </button>
@@ -259,74 +267,109 @@ function App() {
       </header>
 
       <main className="game-container">
-        {gameState.gameOver && (
-          <div className="game-over">
-            <h2>Game Over!</h2>
-            <p>{gameState.players[gameState.winner!].name} wins with {gameState.players[gameState.winner!].score} points!</p>
-          </div>
-        )}
+        <div className="game-layout">
+          <div className="game-spacer-left"></div>
+          
+          <div className="game-main">
+            {gameState.gameOver && (
+              <div className="game-over">
+                <h2>Game Over!</h2>
+                <p>{gameState.players[gameState.winner!].name} wins with {gameState.players[gameState.winner!].score} points!</p>
+              </div>
+            )}
 
-        <div className="scores">
-          {gameState.players.map((player, index) => (
-            <div 
-              key={player.id} 
-              className={`score-card ${index === gameState.currentPlayerIndex ? 'current' : ''}`}
-            >
-              <span className="score-name">{player.name}</span>
-              <span className="score-value">{player.score}</span>
+            {message && (
+              <div className={`message message-${message.type}`}>
+                {message.text}
+              </div>
+            )}
+
+            <GameBoard
+              board={gameState.board}
+              onDropTile={handleDropTile}
+              dragOverCell={dragOverCell}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+            />
+
+            <div className="turn-controls">
+              <button 
+                onClick={handleRecallTiles} 
+                disabled={gameState.placedThisTurn.length === 0 || gameState.gameOver}
+                className="control-btn recall-btn"
+              >
+                Recall Tiles
+              </button>
+              <button 
+                onClick={handleSubmitWord} 
+                disabled={gameState.placedThisTurn.length === 0 || gameState.gameOver}
+                className="control-btn submit-btn"
+              >
+                Submit Word
+              </button>
+              <button 
+                onClick={handlePass} 
+                disabled={gameState.gameOver}
+                className="control-btn pass-btn"
+              >
+                Pass Turn
+              </button>
             </div>
-          ))}
-        </div>
-
-        {message && (
-          <div className={`message message-${message.type}`}>
-            {message.text}
           </div>
-        )}
 
-        <GameBoard
-          board={gameState.board}
-          onDropTile={handleDropTile}
-          dragOverCell={dragOverCell}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-        />
-
-        <div className="turn-controls">
-          <button 
-            onClick={handleRecallTiles} 
-            disabled={gameState.placedThisTurn.length === 0 || gameState.gameOver}
-            className="control-btn recall-btn"
-          >
-            Recall Tiles
-          </button>
-          <button 
-            onClick={handleSubmitWord} 
-            disabled={gameState.placedThisTurn.length === 0 || gameState.gameOver}
-            className="control-btn submit-btn"
-          >
-            Submit Word
-          </button>
-          <button 
-            onClick={handlePass} 
-            disabled={gameState.gameOver}
-            className="control-btn pass-btn"
-          >
-            Pass Turn
-          </button>
+          <aside className="game-sidebar">
+            <div className="tile-bag-info">
+              <h3>Tile Bag</h3>
+              <div className="tile-count">{gameState.tileBag.length}</div>
+              <span className="tile-label">tiles remaining</span>
+            </div>
+            
+            <div className="letter-distribution">
+              <h3>Letters Left</h3>
+              <div className="letter-grid">
+                {(() => {
+                  const counts = countTilesByLetter(gameState.tileBag);
+                  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ?'.split('');
+                  return letters.map((letter) => {
+                    const count = counts.get(letter) || 0;
+                    return (
+                      <div 
+                        key={letter} 
+                        className={`letter-item ${count === 0 ? 'empty' : ''}`}
+                        title={`${letter === '?' ? 'Blank' : letter}: ${count}`}
+                      >
+                        <span className="letter">{letter}</span>
+                        <span className="count">{count}</span>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+            
+            <div className="turn-info">
+              <h3>Turn</h3>
+              <div className="turn-number">{gameState.turnNumber}</div>
+            </div>
+          </aside>
         </div>
 
         <div className="player-racks">
           {gameState.players.map((player, index) => (
-            <PlayerRack
-              key={player.id}
-              tiles={player.rack}
-              playerName={player.name}
-              isCurrentPlayer={index === gameState.currentPlayerIndex}
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}
-              draggingTileId={draggingTile?.id ?? null}
-            />
+            <div key={player.id} className="player-section">
+              <div className={`score-card ${index === gameState.currentPlayerIndex ? 'current' : ''}`}>
+                <span className="score-name">{player.name}</span>
+                <span className="score-value">{player.score}</span>
+              </div>
+              <PlayerRack
+                tiles={player.rack}
+                playerName={player.name}
+                isCurrentPlayer={index === gameState.currentPlayerIndex}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                draggingTileId={draggingTile?.id ?? null}
+              />
+            </div>
           ))}
         </div>
       </main>
