@@ -678,7 +678,7 @@ function App() {
       )}
 
       <header className="header">
-        <h1>Scramble <span className="version">v1.3.0</span></h1>
+        <h1>Scramble <span className="version">v1.3.1</span></h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
             New Game
