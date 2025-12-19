@@ -670,6 +670,7 @@ function App() {
 
       // Switch to next player
       const nextPlayerIndex = prev.currentPlayerIndex === 0 ? 1 : 0;
+      setRackRevealState({ activeRack: prev.currentPlayerIndex, readyPending: true });
 
       return {
         ...prev,
@@ -786,7 +787,7 @@ function App() {
       )}
 
       <header className="header">
-        <h1>Scramble <span className="version">v1.7.3</span></h1>
+        <h1>Scramble <span className="version">v1.8.5</span></h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
             New Game

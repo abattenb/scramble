@@ -32,11 +32,8 @@ export function isValidWord(word: string): boolean {
     console.warn('Dictionary not loaded yet');
     return false;
   }
-  const startTime = performance.now();
   const normalizedWord = word.toLowerCase();
   const isValid = dictionary.has(normalizedWord);
-  const elapsed = performance.now() - startTime;
-  console.log(`Validating word "${normalizedWord}": ${isValid} (${elapsed.toFixed(3)}ms)`);
   return isValid;
 }
 

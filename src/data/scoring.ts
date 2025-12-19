@@ -15,6 +15,80 @@ export interface PlacementResult {
   errors: string[];
 }
 
+// Validate all words considering blank tiles must be consistent across words
+// Returns the letter assignments for blank tiles if valid, null otherwise
+function validateWordsWithBlanks(words: WordInfo[], board: BoardCell[][]): Map<string, string> | null {
+  // Find all blank tiles used in any of the words
+  const blankTiles = new Map<string, { row: number; col: number; tile: any }>();
+
+  for (const word of words) {
+    for (const cell of word.cells) {
+      // Check if this is a blank tile (either by isBlank flag or empty letter)
+      if (cell.tile && (cell.tile.isBlank || cell.tile.letter === '')) {
+        const key = `${cell.row},${cell.col}`;
+        if (!blankTiles.has(key)) {
+          blankTiles.set(key, { row: cell.row, col: cell.col, tile: cell.tile });
+        }
+      }
+    }
+  }
+
+  console.log(`Found ${blankTiles.size} blank tiles in words:`, Array.from(blankTiles.keys()));
+
+  // If no blanks, validate all words normally
+  if (blankTiles.size === 0) {
+    const allValid = words.every((w) => isValidWord(w.word));
+    return allValid ? new Map() : null;
+  }
+
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const blankArray = Array.from(blankTiles.values());
+
+  // Try all combinations of letters for all blank tiles
+  function tryAllCombinations(index: number, assignments: Map<string, string>): Map<string, string> | null {
+    if (index === blankArray.length) {
+      // All blanks assigned, validate all words with these assignments
+      const allWordsValid = words.every((word) => {
+        const wordLetters = word.cells.map((cell) => {
+          // Check if this is a blank tile (either by isBlank flag or empty letter)
+          if (cell.tile && (cell.tile.isBlank || cell.tile.letter === '')) {
+            const key = `${cell.row},${cell.col}`;
+            return assignments.get(key) || '';
+          }
+          return cell.tile?.letter || '';
+        });
+        const fullWord = wordLetters.join('');
+        const valid = isValidWord(fullWord);
+        console.log(`Trying word "${fullWord}" with assignments:`, Object.fromEntries(assignments), 'Valid:', valid);
+        return valid;
+      });
+
+      if (allWordsValid) {
+        console.log('Found valid assignment:', Object.fromEntries(assignments));
+      }
+      return allWordsValid ? assignments : null;
+    }
+
+    // Try each letter A-Z for this blank
+    const blank = blankArray[index];
+    const key = `${blank.row},${blank.col}`;
+
+    for (let i = 0; i < letters.length; i++) {
+      const newAssignments = new Map(assignments);
+      newAssignments.set(key, letters[i]);
+
+      const result = tryAllCombinations(index + 1, newAssignments);
+      if (result !== null) {
+        return result;
+      }
+    }
+
+    return null;
+  }
+
+  return tryAllCombinations(0, new Map());
+}
+
 // Find all words formed by the current placement
 export function findWordsFromPlacement(
   board: BoardCell[][],
@@ -124,8 +198,11 @@ export function findWordsFromPlacement(
     isHorizontal ? 'horizontal' : 'vertical',
     placedSet
   );
-  
-  if (mainWord && mainWord.word.length > 1) {
+
+  console.log('Main word result:', mainWord);
+
+  // Change condition: accept words with length >= 1 if they have blank tiles (will be validated later)
+  if (mainWord && mainWord.cells.length > 1) {
     words.push(mainWord);
   }
 
@@ -138,10 +215,13 @@ export function findWordsFromPlacement(
       isHorizontal ? 'vertical' : 'horizontal',
       placedSet
     );
-    if (perpWord && perpWord.word.length > 1) {
+    console.log('Perpendicular word result:', perpWord);
+
+    // Change condition: accept words based on cell count, not word string length
+    if (perpWord && perpWord.cells.length > 1) {
       // Check if this word is already added
       const isDuplicate = words.some(
-        (w) => w.cells[0].row === perpWord.cells[0].row && 
+        (w) => w.cells[0].row === perpWord.cells[0].row &&
                w.cells[0].col === perpWord.cells[0].col &&
                w.word === perpWord.word
       );
@@ -152,31 +232,53 @@ export function findWordsFromPlacement(
   }
 
   if (words.length === 0) {
-    return { 
-      isValid: false, 
-      words: [], 
-      totalScore: 0, 
-      errors: ['Must form at least one word'] 
+    return {
+      isValid: false,
+      words: [],
+      totalScore: 0,
+      errors: ['Must form at least one word']
     };
   }
 
-  // Validate all words
-  const invalidWords = words.filter((w) => !w.isValid);
-  if (invalidWords.length > 0) {
-    return { 
-      isValid: false, 
-      words, 
-      totalScore: 0, 
-      errors: invalidWords.map((w) => `"${w.word.toUpperCase()}" is not a valid word`) 
+  // Validate all words together (considering blank tiles must be consistent)
+  const blankAssignments = validateWordsWithBlanks(words, board);
+
+  if (blankAssignments === null) {
+    // Find which words are invalid (for error reporting)
+    // Note: This is a simplified check - with blanks, individual words might appear invalid
+    // but we report all words as potentially invalid
+    const wordList = words.map((w) => w.word.toUpperCase()).join(', ');
+    return {
+      isValid: false,
+      words,
+      totalScore: 0,
+      errors: [`Cannot form valid words with this placement: ${wordList}`]
     };
   }
 
-  const totalScore = words.reduce((sum, w) => sum + w.score, 0);
-  
+  // Update words with the correct letters for blank tiles
+  const updatedWords = words.map((word) => {
+    const wordWithBlanks = word.cells.map((cell) => {
+      // Check if this is a blank tile (either by isBlank flag or empty letter)
+      if (cell.tile && (cell.tile.isBlank || cell.tile.letter === '')) {
+        const key = `${cell.row},${cell.col}`;
+        return blankAssignments.get(key) || '';
+      }
+      return cell.tile?.letter || '';
+    }).join('');
+
+    return {
+      ...word,
+      word: wordWithBlanks
+    };
+  });
+
+  const totalScore = updatedWords.reduce((sum, w) => sum + w.score, 0);
+
   // Bonus for using all 7 tiles
   const finalScore = placedTiles.length === 7 ? totalScore + 50 : totalScore;
 
-  return { isValid: true, words, totalScore: finalScore, errors: [] };
+  return { isValid: true, words: updatedWords, totalScore: finalScore, errors: [] };
 }
 
 function getWordAt(
@@ -187,7 +289,7 @@ function getWordAt(
   newlyPlacedSet: Set<string>
 ): WordInfo | null {
   const cells: BoardCell[] = [];
-  
+
   if (direction === 'horizontal') {
     // Find start of word
     let startCol = col;
@@ -216,9 +318,24 @@ function getWordAt(
 
   if (cells.length < 2) return null;
 
+  // Build word from tiles (blank tiles will have empty letters)
   const word = cells.map((c) => c.tile!.letter).join('');
   const score = calculateWordScore(cells, newlyPlacedSet);
-  const isValid = isValidWord(word);
+
+  // Log word info for debugging
+  console.log('getWordAt found word:', {
+    word,
+    length: word.length,
+    cells: cells.map(c => ({
+      letter: c.tile?.letter,
+      isBlank: c.tile?.isBlank,
+      position: `${c.row},${c.col}`
+    }))
+  });
+
+  // Note: isValid is set to true here; actual validation happens in findWordsFromPlacement
+  // where all words are validated together considering blank tile constraints
+  const isValid = true;
 
   return { word, cells, score, isValid };
 }
