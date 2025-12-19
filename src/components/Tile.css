@@ -25,8 +25,9 @@
   cursor: grabbing;
 }
 
-.tile.blank {
-  background: linear-gradient(135deg, #fffaf0 0%, #f5f5dc 100%);
+.tile.blank .tile-letter {
+  color: #8b4513;
+  opacity: 0.6;
 }
 
 .tile-letter {

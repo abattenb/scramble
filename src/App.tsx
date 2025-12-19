@@ -8,6 +8,8 @@ import { GameBoard } from './components/GameBoard';
 import { PlayerRack } from './components/PlayerRack';
 import './App.css';
 
+const STORAGE_KEY = 'scramble-game-state';
+
 // Count remaining tiles by letter
 function countTilesByLetter(tiles: Tile[]): Map<string, number> {
   const counts = new Map<string, number>();
@@ -16,6 +18,34 @@ function countTilesByLetter(tiles: Tile[]): Map<string, number> {
     counts.set(letter, (counts.get(letter) || 0) + 1);
   }
   return counts;
+}
+
+function saveGameState(state: GameState): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (error) {
+    console.error('Failed to save game state:', error);
+  }
+}
+
+function loadGameState(): GameState | null {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      return JSON.parse(saved) as GameState;
+    }
+  } catch (error) {
+    console.error('Failed to load game state:', error);
+  }
+  return null;
+}
+
+function clearGameState(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (error) {
+    console.error('Failed to clear game state:', error);
+  }
 }
 
 function initializeGame(): GameState {
@@ -44,7 +74,11 @@ function initializeGame(): GameState {
 }
 
 function App() {
-  const [gameState, setGameState] = useState<GameState>(initializeGame);
+  const [gameState, setGameState] = useState<GameState>(() => {
+    // Try to load saved game state, otherwise initialize new game
+    const saved = loadGameState();
+    return saved || initializeGame();
+  });
   const [draggingTile, setDraggingTile] = useState<Tile | null>(null);
   const [dragOverCell, setDragOverCell] = useState<{ row: number; col: number } | null>(null);
   const [dictionaryLoaded, setDictionaryLoaded] = useState(false);
@@ -56,6 +90,11 @@ function App() {
       setDictionaryLoaded(true);
     });
   }, []);
+
+  // Save game state whenever it changes
+  useEffect(() => {
+    saveGameState(gameState);
+  }, [gameState]);
 
   const handleDragStart = useCallback((e: React.DragEvent, tile: Tile) => {
     // Only allow current player to drag their tiles
@@ -249,6 +288,7 @@ function App() {
   }, [handleRecallTiles]);
 
   const handleNewGame = useCallback(() => {
+    clearGameState();
     setGameState(initializeGame());
     setDraggingTile(null);
     setDragOverCell(null);

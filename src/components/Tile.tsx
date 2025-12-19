@@ -16,8 +16,8 @@ export function TileComponent({ tile, isDragging, onDragStart, onDragEnd }: Tile
       onDragStart={(e) => onDragStart?.(e, tile)}
       onDragEnd={(e) => onDragEnd?.(e)}
     >
-      <span className="tile-letter">{tile.isBlank ? '' : tile.letter}</span>
-      <span className="tile-points">{tile.isBlank ? '' : tile.points}</span>
+      <span className="tile-letter">{tile.isBlank ? '?' : tile.letter}</span>
+      <span className="tile-points">{tile.points}</span>
     </div>
   );
 }
