@@ -154,6 +154,9 @@ function App() {
   // Track if tile is being dragged from board (vs rack)
   const [dragSourceCell, setDragSourceCell] = useState<{ row: number; col: number } | null>(null);
 
+  // Sidebar accordion state for mobile
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   // Auto-dismiss message after 5 seconds
   useEffect(() => {
     if (message) {
@@ -780,7 +783,7 @@ function App() {
       )}
 
       <header className="header">
-        <h1>Scramble <span className="version">v1.5.0</span></h1>
+        <h1>Scramble <span className="version">v1.6.0</span></h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
             New Game
@@ -837,39 +840,54 @@ function App() {
             </div>
           </div>
 
-          <aside className="game-sidebar">
-            <div className="tile-bag-info">
-              <h3>Tile Bag</h3>
-              <div className="tile-count">{gameState.tileBag.length}</div>
-              <span className="tile-label">tiles remaining</span>
-            </div>
-            
-            <div className="letter-distribution">
-              <h3>Letters Left</h3>
-              <div className="letter-grid">
-                {(() => {
-                  const counts = countTilesByLetter(gameState.tileBag);
-                  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ?'.split('');
-                  return letters.map((letter) => {
-                    const count = counts.get(letter) || 0;
-                    return (
-                      <div 
-                        key={letter} 
-                        className={`letter-item ${count === 0 ? 'empty' : ''}`}
-                        title={`${letter === '?' ? 'Blank' : letter}: ${count}`}
-                      >
-                        <span className="letter">{letter}</span>
-                        <span className="count">{count}</span>
-                      </div>
-                    );
-                  });
-                })()}
+          <aside className={`game-sidebar ${sidebarOpen ? 'open' : ''}`}>
+            <button 
+              className="sidebar-toggle" 
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              aria-expanded={sidebarOpen}
+            >
+              <span className="sidebar-toggle-content">
+                <span className="sidebar-toggle-left">
+                  <span className="material-icons">{sidebarOpen ? 'expand_less' : 'expand_more'}</span>
+                  <span>Tile Bag ({gameState.tileBag.length})</span>
+                </span>
+                <span className="sidebar-toggle-turn">Turn {gameState.turnNumber}</span>
+              </span>
+            </button>
+            <div className="sidebar-content">
+              <div className="tile-bag-info">
+                <h3>Tile Bag</h3>
+                <div className="tile-count">{gameState.tileBag.length}</div>
+                <span className="tile-label">tiles remaining</span>
               </div>
-            </div>
-            
-            <div className="turn-info">
-              <h3>Turn</h3>
-              <div className="turn-number">{gameState.turnNumber}</div>
+              
+              <div className="letter-distribution">
+                <h3>Letters Left</h3>
+                <div className="letter-grid">
+                  {(() => {
+                    const counts = countTilesByLetter(gameState.tileBag);
+                    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ?'.split('');
+                    return letters.map((letter) => {
+                      const count = counts.get(letter) || 0;
+                      return (
+                        <div 
+                          key={letter} 
+                          className={`letter-item ${count === 0 ? 'empty' : ''}`}
+                          title={`${letter === '?' ? 'Blank' : letter}: ${count}`}
+                        >
+                          <span className="letter">{letter}</span>
+                          <span className="count">{count}</span>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+              
+              <div className="turn-info">
+                <h3>Turn</h3>
+                <div className="turn-number">{gameState.turnNumber}</div>
+              </div>
             </div>
           </aside>
         </div>
