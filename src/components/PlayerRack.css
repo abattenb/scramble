@@ -77,16 +77,14 @@
 /* Rack actions */
 .rack-actions {
   display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin-top: 12px;
+  gap: 8px;
 }
 
 .exchange-btn,
 .cancel-exchange-btn,
 .confirm-exchange-btn {
-  padding: 8px 16px;
-  font-size: 14px;
+  padding: 6px 12px;
+  font-size: 12px;
   font-weight: bold;
   border-radius: 6px;
   cursor: pointer;

@@ -38,6 +38,36 @@ export function PlayerRack({
       <div className="rack-header">
         <span className="player-name">{playerName}</span>
         {isCurrentPlayer && exchangeMode && <span className="turn-indicator exchange">Select tiles to exchange</span>}
+        {isCurrentPlayer && (
+          <div className="rack-actions">
+            {!exchangeMode ? (
+              <button 
+                className="exchange-btn"
+                onClick={onToggleExchangeMode}
+                disabled={!canExchange || tilesPlacedThisTurn}
+                title={!canExchange ? "Not enough tiles in bag" : tilesPlacedThisTurn ? "Recall tiles first" : "Exchange tiles with the bag"}
+              >
+                Exchange Tiles
+              </button>
+            ) : (
+              <>
+                <button 
+                  className="cancel-exchange-btn"
+                  onClick={onToggleExchangeMode}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="confirm-exchange-btn"
+                  onClick={onConfirmExchange}
+                  disabled={selectedForExchange.size === 0}
+                >
+                  Confirm ({selectedForExchange.size})
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
       <div className="rack-tiles">
         {tiles.map((tile) => (
@@ -52,36 +82,6 @@ export function PlayerRack({
           />
         ))}
       </div>
-      {isCurrentPlayer && (
-        <div className="rack-actions">
-          {!exchangeMode ? (
-            <button 
-              className="exchange-btn"
-              onClick={onToggleExchangeMode}
-              disabled={!canExchange || tilesPlacedThisTurn}
-              title={!canExchange ? "Not enough tiles in bag" : tilesPlacedThisTurn ? "Recall tiles first" : "Exchange tiles with the bag"}
-            >
-              Exchange Tiles
-            </button>
-          ) : (
-            <>
-              <button 
-                className="cancel-exchange-btn"
-                onClick={onToggleExchangeMode}
-              >
-                Cancel
-              </button>
-              <button 
-                className="confirm-exchange-btn"
-                onClick={onConfirmExchange}
-                disabled={selectedForExchange.size === 0}
-              >
-                Confirm ({selectedForExchange.size})
-              </button>
-            </>
-          )}
-        </div>
-      )}
     </div>
   );
 }

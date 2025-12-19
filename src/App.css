@@ -193,7 +193,8 @@ body {
   border-radius: 8px;
   border: 3px solid #444;
   transition: all 0.3s ease;
-  min-width: 100px;
+  min-width: 140px;
+  min-height: 120px;
 }
 
 .score-card.current {
