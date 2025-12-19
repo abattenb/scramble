@@ -5,6 +5,7 @@ import './PlayerRack.css';
 interface PlayerRackProps {
   tiles: Tile[];
   playerName: string;
+  score: number;
   isCurrentPlayer: boolean;
   onDragStart: (e: React.DragEvent, tile: Tile) => void;
   onDragEnd: (e: React.DragEvent) => void;
@@ -21,6 +22,7 @@ interface PlayerRackProps {
 export function PlayerRack({ 
   tiles, 
   playerName, 
+  score,
   isCurrentPlayer, 
   onDragStart, 
   onDragEnd,
@@ -36,7 +38,7 @@ export function PlayerRack({
   return (
     <div className={`player-rack ${isCurrentPlayer ? 'current-player' : ''} ${exchangeMode ? 'exchange-mode' : ''}`}>
       <div className="rack-header">
-        <span className="player-name">{playerName}</span>
+        <span className="player-name">{playerName}<span className="mobile-score"> - {score}</span></span>
         {isCurrentPlayer && exchangeMode && <span className="turn-indicator exchange">Select tiles to exchange</span>}
         {isCurrentPlayer && (
           <div className="rack-actions">

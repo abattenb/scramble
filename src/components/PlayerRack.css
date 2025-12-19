@@ -32,6 +32,10 @@
   color: #f5deb3;
 }
 
+.mobile-score {
+  display: none;
+}
+
 .turn-indicator {
   background: #ffd700;
   color: #2c1810;
@@ -132,4 +136,60 @@
 .confirm-exchange-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 600px) {
+  .player-rack {
+    padding: 10px;
+    margin: 8px 0;
+  }
+
+  .rack-tiles {
+    width: auto;
+    min-width: unset;
+    gap: 6px;
+    padding: 6px;
+    flex-wrap: wrap;
+  }
+
+  .rack-tiles .tile {
+    width: 42px;
+    height: 42px;
+  }
+
+  .rack-tiles .tile-letter {
+    font-size: 22px;
+  }
+
+  .rack-tiles .tile-points {
+    font-size: 10px;
+    bottom: 2px;
+    right: 3px;
+  }
+
+  .player-name {
+    font-size: 14px;
+  }
+
+  .mobile-score {
+    display: inline;
+    color: #ffd700;
+  }
+
+  .rack-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .rack-actions {
+    flex-wrap: wrap;
+  }
+
+  .exchange-btn,
+  .cancel-exchange-btn,
+  .confirm-exchange-btn {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
 }

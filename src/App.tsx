@@ -89,6 +89,16 @@ function App() {
   const [exchangeMode, setExchangeMode] = useState(false);
   const [selectedForExchange, setSelectedForExchange] = useState<Set<string>>(new Set());
 
+  // Auto-dismiss message after 5 seconds
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => {
+        setMessage(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
   // Load dictionary on mount
   useEffect(() => {
     loadDictionary().then(() => {
@@ -439,9 +449,12 @@ function App() {
 
   const handleNewGame = useCallback(() => {
     clearGameState();
-    setGameState(initializeGame());
+    const newGame = initializeGame();
+    setGameState(newGame);
     setDraggingTile(null);
+    setDragPosition(null);
     setDragOverCell(null);
+    setDragSourceCell(null);
     setExchangeMode(false);
     setSelectedForExchange(new Set());
     setMessage(null);
@@ -449,6 +462,12 @@ function App() {
 
   return (
     <div className="app">
+      {message && (
+        <div className={`message message-${message.type}`}>
+          {message.text}
+        </div>
+      )}
+
       <header className="header">
         <h1>Scramble</h1>
         <div className="game-info">
@@ -467,12 +486,6 @@ function App() {
               <div className="game-over">
                 <h2>Game Over!</h2>
                 <p>{gameState.players[gameState.winner!].name} wins with {gameState.players[gameState.winner!].score} points!</p>
-              </div>
-            )}
-
-            {message && (
-              <div className={`message message-${message.type}`}>
-                {message.text}
               </div>
             )}
 
@@ -553,7 +566,6 @@ function App() {
           {gameState.players.map((player, index) => (
             <div key={player.id} className="player-section">
               <div className={`score-card ${index === gameState.currentPlayerIndex ? 'current' : ''}`}>
-                <span className="score-name">{player.name}</span>
                 <span className="score-value">{player.score}</span>
                 {index === gameState.currentPlayerIndex && (
                   <span className="turn-indicator">Your Turn</span>
@@ -562,6 +574,7 @@ function App() {
               <PlayerRack
                 tiles={player.rack}
                 playerName={player.name}
+                score={player.score}
                 isCurrentPlayer={index === gameState.currentPlayerIndex}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}

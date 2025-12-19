@@ -78,3 +78,47 @@
     box-shadow: 0 0 12px 4px #ffd700;
   }
 }
+
+/* Mobile Responsive Styles */
+@media (max-width: 1090px) {
+  .game-board {
+    padding: 4px;
+    border-width: 3px;
+  }
+
+  .board-row {
+    gap: 1px;
+  }
+
+  .board-cell {
+    width: 32px;
+    height: 32px;
+    font-size: 8px;
+  }
+
+  .bonus-label {
+    font-size: 7px;
+  }
+}
+
+@media (max-width: 600px) {
+  .game-board {
+    padding: 3px;
+    border-width: 2px;
+  }
+
+  .board-row {
+    gap: 1px;
+  }
+
+  .board-cell {
+    width: 22px;
+    height: 22px;
+    font-size: 6px;
+    border-radius: 1px;
+  }
+
+  .bonus-label {
+    font-size: 5px;
+  }
+}
