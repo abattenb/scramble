@@ -158,6 +158,48 @@
   cursor: not-allowed;
 }
 
+/* Medium screen responsive */
+@media (max-width: 840px) {
+  .player-rack {
+    padding: 12px;
+  }
+
+  .rack-tiles {
+    width: calc(7 * 48px + 6 * 8px + 2 * 8px);
+    gap: 8px;
+    padding: 8px;
+    min-height: 54px;
+  }
+
+  .rack-tiles .tile {
+    width: 48px;
+    height: 48px;
+    box-shadow: 0px 3px 0 #9d7652, 2px 2px 6px rgba(0, 0, 0, 0.2);
+  }
+
+  .rack-tiles .tile:hover {
+    box-shadow: 0px 5px 0 #9d7652, 2px 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .rack-tiles .tile.selected {
+    box-shadow: 0px 5px 0 #2e7d32, 0 0 10px rgba(76, 175, 80, 0.6);
+  }
+
+  .rack-tiles .tile-letter {
+    font-size: 24px;
+  }
+
+  .rack-tiles .tile-points {
+    font-size: 11px;
+    bottom: 2px;
+    right: 4px;
+  }
+
+  .player-name {
+    font-size: 16px;
+  }
+}
+
 /* Mobile Responsive Styles */
 @media (max-width: 675px) {
   .player-rack {

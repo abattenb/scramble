@@ -1,4 +1,4 @@
-const CACHE_NAME = 'scramble-v1.15.0';
+const CACHE_NAME = 'scramble-v1.15.1';
 const BASE_URL = '/scramble/';
 const urlsToCache = [
   BASE_URL,

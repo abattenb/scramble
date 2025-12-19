@@ -570,6 +570,43 @@ body {
   .turn-info {
     display: none;
   }
+
+  .letter-grid {
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+
+  .letter-item {
+    padding: 1px 3px;
+    font-size: 10px;
+  }
+
+  .header {
+    padding: 10px 20px;
+    gap: 8px;
+  }
+
+  .header h1 {
+    font-size: 26px;
+  }
+
+  .new-game-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .score-card {
+    min-width: 120px;
+    padding: 12px 18px;
+  }
+
+  .score-value {
+    font-size: 50px;
+  }
+
+  .score-name {
+    font-size: 13px;
+  }
 }
 
 @media (max-width: 675px) {
@@ -591,12 +628,21 @@ body {
 
   .header {
     flex-wrap: wrap;
-    padding: 8px 12px;
+    padding: 6px 10px;
     gap: 4px;
   }
 
   .header h1 {
-    font-size: 24px;
+    font-size: 20px;
+  }
+
+  .header h1 .version {
+    font-size: 10px;
+  }
+
+  .new-game-btn {
+    padding: 6px 12px;
+    font-size: 12px;
   }
 
   .game-main {
@@ -695,6 +741,16 @@ body {
 
   .letter-distribution {
     display: none;
+  }
+
+  .letter-grid {
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+
+  .letter-item {
+    padding: 1px 3px;
+    font-size: 10px;
   }
 
   /* Hide tile-bag-info and turn-info on mobile - info shown in toggle */
