@@ -168,6 +168,10 @@ function App() {
   // Sidebar accordion state for mobile
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Escape hatch state
+  const [escapeHatchTaps, setEscapeHatchTaps] = useState(0);
+  const escapeHatchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Auto-dismiss message after 5 seconds
   useEffect(() => {
     if (message) {
@@ -177,6 +181,15 @@ function App() {
       return () => clearTimeout(timer);
     }
   }, [message]);
+
+  // Cleanup escape hatch timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (escapeHatchTimeoutRef.current) {
+        clearTimeout(escapeHatchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Load dictionary on mount
   useEffect(() => {
@@ -724,6 +737,37 @@ function App() {
     }
   }, []);
 
+  const handleEscapeHatch = useCallback(() => {
+    // Clear existing timeout
+    if (escapeHatchTimeoutRef.current) {
+      clearTimeout(escapeHatchTimeoutRef.current);
+    }
+
+    const newCount = escapeHatchTaps + 1;
+    setEscapeHatchTaps(newCount);
+
+    // Show countdown message after 4 taps
+    if (newCount >= 4 && newCount < 8) {
+      const remaining = 8 - newCount;
+      setMessage({
+        text: `${remaining} more tap${remaining === 1 ? '' : 's'} to reset game...`,
+        type: 'info'
+      });
+    }
+
+    // Reset everything at 8 taps
+    if (newCount >= 8) {
+      localStorage.clear();
+      window.location.reload();
+      return;
+    }
+
+    // Reset tap count after 2 seconds of inactivity
+    escapeHatchTimeoutRef.current = setTimeout(() => {
+      setEscapeHatchTaps(0);
+    }, 2000);
+  }, [escapeHatchTaps]);
+
   // Check if we can close the modal (has existing game)
   const canCloseModal = loadGameState() !== null && !loadGameState()?.gameOver;
 
@@ -738,7 +782,7 @@ function App() {
                 <span className="material-icons">close</span>
               </button>
             )}
-            <h2>Welcome to Scramble!</h2>
+            <h2>Scramble!</h2>
             <p>A word game for 2 players</p>
             <div className="player-name-inputs">
               <div className="player-name-field">
@@ -804,7 +848,9 @@ function App() {
       )}
 
       <header className="header">
-        <h1>Scramble <span className="version">v1.12.0</span></h1>
+        <h1 onClick={handleEscapeHatch} style={{ cursor: 'pointer', userSelect: 'none' }}>
+          Scramble <span className="version">v1.13.0</span>
+        </h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
             New Game
