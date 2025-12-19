@@ -495,7 +495,7 @@ function App() {
       // Expert mode: end turn on invalid word (but not placement errors)
       if (expertMode && isInvalidWordError) {
         setMessage({ text: `${errorMessage} - Turn lost!`, type: 'error' });
-        
+
         // Return tiles to rack and switch turns
         setGameState((prev) => {
           const newBoard = prev.board.map((r) => r.map((c) => ({ ...c })));
@@ -520,6 +520,7 @@ function App() {
 
           // Switch to next player
           const nextPlayerIndex = prev.currentPlayerIndex === 0 ? 1 : 0;
+          setRackRevealState({ activeRack: prev.currentPlayerIndex, readyPending: true });
 
           return {
             ...prev,
@@ -785,7 +786,7 @@ function App() {
       )}
 
       <header className="header">
-        <h1>Scramble <span className="version">v1.7.0</span></h1>
+        <h1>Scramble <span className="version">v1.7.2</span></h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
             New Game
@@ -908,14 +909,17 @@ function App() {
               ? player.rack.map((t) => ({ ...t, letter: '', points: 0 }))
               : player.rack;
             return (
-              <div key={player.id} className="player-section" style={{ position: 'relative' }}>
+              <div key={player.id} className="player-section">
                 <div className={`score-card ${index === gameState.currentPlayerIndex ? 'current' : ''}`}>
                   <span className="score-value">{player.score}</span>
                   {index === gameState.currentPlayerIndex && (
                     <span className="turn-indicator">Your Turn</span>
                   )}
                 </div>
-                <div style={isObscuredRack ? { opacity: 0.4, pointerEvents: 'none', filter: 'blur(0.5px)' } : {}}>
+                <div style={{
+                  position: 'relative',
+                  ...(isObscuredRack && !showReadyButton ? { opacity: 0.4, pointerEvents: 'none', filter: 'blur(0.5px)' } : {})
+                }}>
                   <PlayerRack
                     tiles={rackTiles}
                     playerName={player.name}
@@ -934,29 +938,29 @@ function App() {
                     tilesPlacedThisTurn={gameState.placedThisTurn.length > 0}
                     onDropToRack={index === gameState.currentPlayerIndex ? handleDropToRack : undefined}
                   />
+                  {showReadyButton && (
+                    <div className="ready-overlay" style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      zIndex: 10,
+                      background: 'rgba(30, 30, 30, 0.85)'
+                    }}>
+                      <button
+                        className="ready-btn"
+                        style={{ fontSize: 32, padding: '32px 64px', borderRadius: 16, background: '#ffd700', color: '#2c1810', fontWeight: 'bold', border: '4px solid #8b4513', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}
+                        onClick={() => setRackRevealState({ activeRack: index, readyPending: false })}
+                      >
+                        {player.name} ready!
+                      </button>
+                    </div>
+                  )}
                 </div>
-                {showReadyButton && (
-                  <div className="ready-overlay" style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 10,
-                    background: 'rgba(30, 30, 30, 0.85)'
-                  }}>
-                    <button
-                      className="ready-btn"
-                      style={{ fontSize: 32, padding: '32px 64px', borderRadius: 16, background: '#ffd700', color: '#2c1810', fontWeight: 'bold', border: '4px solid #8b4513', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}
-                      onClick={() => setRackRevealState({ activeRack: index, readyPending: false })}
-                    >
-                      Ready
-                    </button>
-                  </div>
-                )}
               </div>
             );
           })}
