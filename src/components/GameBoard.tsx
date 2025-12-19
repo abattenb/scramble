@@ -49,7 +49,7 @@ export function GameBoard({
             return (
               <div
                 key={`${rowIndex}-${colIndex}`}
-                className={`board-cell ${cell.bonus} ${isDragOver ? 'drag-over' : ''} ${cell.isNewlyPlaced ? 'newly-placed' : ''}`}
+                className="board-cell-wrapper"
                 data-row={rowIndex}
                 data-col={colIndex}
                 onDrop={() => onDropTile(rowIndex, colIndex)}
@@ -59,17 +59,19 @@ export function GameBoard({
                 }}
                 onDragLeave={onDragLeave}
               >
-                {cell.tile ? (
-                  <TileComponent 
-                    tile={cell.tile} 
-                    isDragging={isDragging}
-                    onDragStart={cell.isNewlyPlaced ? (e, tile) => onTileDragStart?.(e, tile, rowIndex, colIndex) : undefined}
-                    onDragEnd={cell.isNewlyPlaced ? onTileDragEnd : undefined}
-                    onTouchStart={cell.isNewlyPlaced ? (e, tile) => onTileTouchStart?.(e, tile, rowIndex, colIndex) : undefined}
-                  />
-                ) : (
-                  <span className="bonus-label">{getBonusLabel(cell.bonus)}</span>
-                )}
+                <div className={`board-cell ${cell.bonus} ${isDragOver ? 'drag-over' : ''} ${cell.isNewlyPlaced ? 'newly-placed' : ''}`}>
+                  {cell.tile ? (
+                    <TileComponent
+                      tile={cell.tile}
+                      isDragging={isDragging}
+                      onDragStart={cell.isNewlyPlaced ? (e, tile) => onTileDragStart?.(e, tile, rowIndex, colIndex) : undefined}
+                      onDragEnd={cell.isNewlyPlaced ? onTileDragEnd : undefined}
+                      onTouchStart={cell.isNewlyPlaced ? (e, tile) => onTileTouchStart?.(e, tile, rowIndex, colIndex) : undefined}
+                    />
+                  ) : (
+                    <span className="bonus-label">{getBonusLabel(cell.bonus)}</span>
+                  )}
+                </div>
               </div>
             );
           })}
