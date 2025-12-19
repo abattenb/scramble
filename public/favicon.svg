@@ -1,0 +1,35 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tileGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f5deb3;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d2b48c;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Tile background -->
+  <rect width="64" height="64" rx="4" fill="url(#tileGradient)"/>
+
+  <!-- Shadow/border effect -->
+  <rect x="1" y="60" width="62" height="4" rx="2" fill="#9d7652" opacity="0.4"/>
+
+  <!-- Letter S -->
+  <text
+    x="50%"
+    y="50%"
+    dominant-baseline="central"
+    text-anchor="middle"
+    font-family="Roboto, Arial, sans-serif"
+    font-size="42"
+    font-weight="700"
+    fill="#2c1810">S</text>
+
+  <!-- Points value -->
+  <text
+    x="54"
+    y="52"
+    text-anchor="end"
+    font-family="Roboto, Arial, sans-serif"
+    font-size="14"
+    font-weight="600"
+    fill="#2c1810">1</text>
+</svg>
