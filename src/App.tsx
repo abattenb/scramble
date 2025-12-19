@@ -10,6 +10,31 @@ import './App.css';
 
 const STORAGE_KEY = 'scramble-game-state';
 const PLAYER_NAMES_KEY = 'scramble-player-names';
+const GAME_SETTINGS_KEY = 'scramble-game-settings';
+
+interface GameSettings {
+  expertMode: boolean;
+}
+
+function saveGameSettings(settings: GameSettings): void {
+  try {
+    localStorage.setItem(GAME_SETTINGS_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.error('Failed to save game settings:', error);
+  }
+}
+
+function loadGameSettings(): GameSettings {
+  try {
+    const saved = localStorage.getItem(GAME_SETTINGS_KEY);
+    if (saved) {
+      return JSON.parse(saved) as GameSettings;
+    }
+  } catch (error) {
+    console.error('Failed to load game settings:', error);
+  }
+  return { expertMode: false };
+}
 
 // Count remaining tiles by letter
 function countTilesByLetter(tiles: Tile[]): Map<string, number> {
@@ -114,6 +139,8 @@ function App() {
   // Player names for the start modal
   const [player1Name, setPlayer1Name] = useState<string>(() => loadPlayerNames().player1);
   const [player2Name, setPlayer2Name] = useState<string>(() => loadPlayerNames().player2);
+  // Game settings
+  const [expertMode, setExpertMode] = useState<boolean>(() => loadGameSettings().expertMode);
   const [draggingTile, setDraggingTile] = useState<Tile | null>(null);
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
   const [dragOverCell, setDragOverCell] = useState<{ row: number; col: number } | null>(null);
@@ -459,7 +486,51 @@ function App() {
     const result = findWordsFromPlacement(gameState.board, placedPositions, gameState.isFirstMove);
 
     if (!result.isValid) {
-      setMessage({ text: result.errors[0] || 'Invalid placement', type: 'error' });
+      const errorMessage = result.errors[0] || 'Invalid placement';
+      const isInvalidWordError = errorMessage.includes('is not a valid word');
+      
+      // Expert mode: end turn on invalid word (but not placement errors)
+      if (expertMode && isInvalidWordError) {
+        setMessage({ text: `${errorMessage} - Turn lost!`, type: 'error' });
+        
+        // Return tiles to rack and switch turns
+        setGameState((prev) => {
+          const newBoard = prev.board.map((r) => r.map((c) => ({ ...c })));
+          const tilesReturned: Tile[] = [];
+
+          // Remove placed tiles from board
+          for (const placed of prev.placedThisTurn) {
+            tilesReturned.push(placed.tile);
+            newBoard[placed.row][placed.col] = {
+              ...newBoard[placed.row][placed.col],
+              tile: null,
+              isNewlyPlaced: false,
+            };
+          }
+
+          // Return tiles to current player's rack
+          const newPlayers = [...prev.players] as [Player, Player];
+          newPlayers[prev.currentPlayerIndex] = {
+            ...newPlayers[prev.currentPlayerIndex],
+            rack: [...newPlayers[prev.currentPlayerIndex].rack, ...tilesReturned],
+          };
+
+          // Switch to next player
+          const nextPlayerIndex = prev.currentPlayerIndex === 0 ? 1 : 0;
+
+          return {
+            ...prev,
+            board: newBoard,
+            players: newPlayers,
+            currentPlayerIndex: nextPlayerIndex,
+            placedThisTurn: [],
+            turnNumber: prev.turnNumber + 1,
+          };
+        });
+        return;
+      }
+      
+      setMessage({ text: errorMessage, type: 'error' });
       return;
     }
 
@@ -525,7 +596,7 @@ function App() {
       text: `+${result.totalScore} points! Words: ${wordsPlayed}`, 
       type: 'success' 
     });
-  }, [dictionaryLoaded, gameState.placedThisTurn, gameState.board, gameState.isFirstMove]);
+  }, [dictionaryLoaded, gameState.placedThisTurn, gameState.board, gameState.isFirstMove, expertMode]);
 
   const handlePass = useCallback(() => {
     // Return any placed tiles
@@ -609,10 +680,11 @@ function App() {
   }, [selectedForExchange, gameState.tileBag.length]);
 
   const handleStartGame = useCallback(() => {
-    // Save player names for future sessions
+    // Save player names and settings for future sessions
     const name1 = player1Name.trim() || 'Player 1';
     const name2 = player2Name.trim() || 'Player 2';
     savePlayerNames({ player1: name1, player2: name2 });
+    saveGameSettings({ expertMode });
     
     clearGameState();
     const newGame = initializeGame(name1, name2);
@@ -625,7 +697,7 @@ function App() {
     setExchangeMode(false);
     setSelectedForExchange(new Set());
     setMessage(null);
-  }, [player1Name, player2Name]);
+  }, [player1Name, player2Name, expertMode]);
 
   const handleNewGame = useCallback(() => {
     // Show start modal when clicking New Game
@@ -664,6 +736,20 @@ function App() {
                 />
               </div>
             </div>
+            <div className="game-settings">
+              <label className="toggle-setting">
+                <input
+                  type="checkbox"
+                  checked={expertMode}
+                  onChange={(e) => setExpertMode(e.target.checked)}
+                />
+                <span className="toggle-slider"></span>
+                <span className="toggle-label">
+                  Expert Mode
+                  <span className="toggle-subtext">Wrong word ends turn</span>
+                </span>
+              </label>
+            </div>
             <button onClick={handleStartGame} className="start-game-btn">
               Start Game
             </button>
@@ -678,7 +764,7 @@ function App() {
       )}
 
       <header className="header">
-        <h1>Scramble <span className="version">v1.3.1</span></h1>
+        <h1>Scramble <span className="version">v1.4.0</span></h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
             New Game

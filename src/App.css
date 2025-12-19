@@ -711,3 +711,68 @@ body {
 .player-name-field input::placeholder {
   color: #8b7355;
 }
+
+/* Game settings toggle */
+.game-settings {
+  margin-bottom: 24px;
+}
+
+.toggle-setting {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-setting input {
+  display: none;
+}
+
+.toggle-slider {
+  position: relative;
+  width: 48px;
+  height: 26px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 13px;
+  border: 2px solid #8b4513;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: #c8b896;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.toggle-setting input:checked + .toggle-slider {
+  background: #2e7d32;
+  border-color: #4caf50;
+}
+
+.toggle-setting input:checked + .toggle-slider::after {
+  left: calc(100% - 20px);
+  background: #ffd700;
+}
+
+.toggle-label {
+  display: flex;
+  flex-direction: column;
+  color: #f5deb3;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.toggle-subtext {
+  font-size: 12px;
+  font-weight: normal;
+  color: #c8b896;
+  margin-top: 2px;
+}
