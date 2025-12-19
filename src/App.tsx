@@ -172,6 +172,9 @@ function App() {
   const [escapeHatchTaps, setEscapeHatchTaps] = useState(0);
   const escapeHatchTimeoutRef = useRef<number | null>(null);
 
+  // Update available state
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+
   // Auto-dismiss message after 5 seconds
   useEffect(() => {
     if (message) {
@@ -189,6 +192,16 @@ function App() {
         clearTimeout(escapeHatchTimeoutRef.current);
       }
     };
+  }, []);
+
+  // Listen for service worker updates
+  useEffect(() => {
+    const handleUpdate = () => {
+      setUpdateAvailable(true);
+    };
+
+    window.addEventListener('swUpdateAvailable', handleUpdate);
+    return () => window.removeEventListener('swUpdateAvailable', handleUpdate);
   }, []);
 
   // Load dictionary on mount
@@ -847,9 +860,21 @@ function App() {
         </div>
       )}
 
+      {updateAvailable && (
+        <div className="update-notification">
+          <span>New version available!</span>
+          <button onClick={() => window.location.reload()} className="update-btn">
+            Update Now
+          </button>
+          <button onClick={() => setUpdateAvailable(false)} className="update-dismiss">
+            ✕
+          </button>
+        </div>
+      )}
+
       <header className="header">
         <h1 onClick={handleEscapeHatch} style={{ cursor: 'pointer', userSelect: 'none' }}>
-          Scramble <span className="version">v1.15.1</span>
+          Scramble <span className="version">v1.16.0</span>
         </h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">

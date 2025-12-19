@@ -46,10 +46,25 @@
           })
             .then((registration) => {
               console.log('ServiceWorker registered:', registration);
+
+              // Check for updates periodically
+              setInterval(() => {
+                registration.update();
+              }, 60000); // Check every minute
             })
             .catch((error) => {
               console.log('ServiceWorker registration failed:', error);
             });
+
+          // Listen for messages from service worker
+          navigator.serviceWorker.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'NEW_VERSION_AVAILABLE') {
+              // Dispatch custom event that React can listen to
+              window.dispatchEvent(new CustomEvent('swUpdateAvailable', {
+                detail: { version: event.data.version }
+              }));
+            }
+          });
         });
       }
     </script>

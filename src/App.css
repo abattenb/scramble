@@ -355,6 +355,59 @@ body {
   color: #fff;
 }
 
+/* Update Notification */
+.update-notification {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(76, 175, 80, 0.95);
+  border: 2px solid #4caf50;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  animation: slideDown 0.3s ease;
+}
+
+.update-btn {
+  padding: 6px 16px;
+  background: #fff;
+  color: #2e7d32;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.update-btn:hover {
+  background: #f0f0f0;
+  transform: scale(1.05);
+}
+
+.update-dismiss {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.update-dismiss:hover {
+  transform: scale(1.2);
+}
+
 /* Game Over */
 .game-over {
   position: fixed;

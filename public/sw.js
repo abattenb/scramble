@@ -1,4 +1,4 @@
-const CACHE_NAME = 'scramble-v1.15.1';
+const CACHE_NAME = 'scramble-v1.16.0';
 const BASE_URL = '/scramble/';
 const urlsToCache = [
   BASE_URL,
@@ -18,6 +18,8 @@ self.addEventListener('install', (event) => {
         return cache.addAll(urlsToCache);
       })
   );
+  // Activate new service worker immediately
+  self.skipWaiting();
 });
 
 // Activate event - clean up old caches
@@ -32,6 +34,19 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
+    }).then(() => {
+      // Take control of all clients immediately
+      return self.clients.claim();
+    }).then(() => {
+      // Notify all clients that a new version is available
+      return self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage({
+            type: 'NEW_VERSION_AVAILABLE',
+            version: CACHE_NAME
+          });
+        });
+      });
     })
   );
 });
