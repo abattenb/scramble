@@ -222,10 +222,10 @@ function App() {
         
         // Find which cell we're over
         const element = document.elementFromPoint(touch.clientX, touch.clientY);
-        const cell = element?.closest('.board-cell') as HTMLElement;
-        if (cell) {
-          const row = parseInt(cell.dataset.row || '-1');
-          const col = parseInt(cell.dataset.col || '-1');
+        const cellWrapper = element?.closest('.board-cell-wrapper') as HTMLElement;
+        if (cellWrapper) {
+          const row = parseInt(cellWrapper.dataset.row || '-1');
+          const col = parseInt(cellWrapper.dataset.col || '-1');
           if (row >= 0 && col >= 0) {
             setDragOverCell({ row, col });
           }
@@ -849,7 +849,7 @@ function App() {
 
       <header className="header">
         <h1 onClick={handleEscapeHatch} style={{ cursor: 'pointer', userSelect: 'none' }}>
-          Scramble <span className="version">v1.13.0</span>
+          Scramble <span className="version">v1.13.1</span>
         </h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
