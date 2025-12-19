@@ -82,22 +82,22 @@
 /* Mobile Responsive Styles */
 @media (max-width: 1090px) {
   .game-board {
-    padding: 4px;
+    padding: 6px;
     border-width: 3px;
   }
 
   .board-row {
-    gap: 1px;
+    gap: 2px;
   }
 
   .board-cell {
-    width: 32px;
-    height: 32px;
-    font-size: 8px;
+    width: 38px;
+    height: 38px;
+    font-size: 9px;
   }
 
   .bonus-label {
-    font-size: 7px;
+    font-size: 8px;
   }
 }
 

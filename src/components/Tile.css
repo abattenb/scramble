@@ -55,18 +55,18 @@
 /* Mobile Responsive Styles */
 @media (max-width: 1090px) {
   .tile {
-    width: 28px;
-    height: 28px;
-    border-width: 1px;
-    border-radius: 2px;
+    width: 34px;
+    height: 34px;
+    border-width: 2px;
+    border-radius: 3px;
   }
 
   .tile-letter {
-    font-size: 16px;
+    font-size: 19px;
   }
 
   .tile-points {
-    font-size: 7px;
+    font-size: 8px;
     bottom: 1px;
     right: 2px;
   }
