@@ -508,7 +508,7 @@ function App() {
 
     if (!result.isValid) {
       const errorMessage = result.errors[0] || 'Invalid placement';
-      const isInvalidWordError = errorMessage.includes('is not a valid word');
+      const isInvalidWordError = errorMessage.includes('Cannot form valid words');
       
       // Expert mode: end turn on invalid word (but not placement errors)
       if (expertMode && isInvalidWordError) {
@@ -849,7 +849,7 @@ function App() {
 
       <header className="header">
         <h1 onClick={handleEscapeHatch} style={{ cursor: 'pointer', userSelect: 'none' }}>
-          Scramble <span className="version">v1.14.0</span>
+          Scramble <span className="version">v1.14.1</span>
         </h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
