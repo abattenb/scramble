@@ -614,3 +614,60 @@ body {
   }
 }
 
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: linear-gradient(180deg, #4a3728 0%, #2c1810 100%);
+  border: 3px solid #ffd700;
+  border-radius: 16px;
+  padding: 40px 60px;
+  text-align: center;
+  box-shadow: 0 0 40px rgba(255, 215, 0, 0.3);
+}
+
+.modal h2 {
+  margin: 0 0 16px 0;
+  font-size: 32px;
+  color: #ffd700;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.modal p {
+  margin: 0 0 32px 0;
+  font-size: 18px;
+  color: #f5deb3;
+}
+
+.start-game-btn {
+  padding: 16px 48px;
+  font-size: 20px;
+  font-weight: bold;
+  background: linear-gradient(180deg, #ffd700 0%, #daa520 100%);
+  color: #2c1810;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.start-game-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.start-game-btn:active {
+  transform: translateY(0);
+}

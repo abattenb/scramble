@@ -73,11 +73,21 @@ function initializeGame(): GameState {
   };
 }
 
+// Game phase state machine
+type GamePhase = 'start' | 'playing' | 'gameOver';
+
 function App() {
   const [gameState, setGameState] = useState<GameState>(() => {
     // Try to load saved game state, otherwise initialize new game
     const saved = loadGameState();
     return saved || initializeGame();
+  });
+  const [gamePhase, setGamePhase] = useState<GamePhase>(() => {
+    // Determine initial phase based on saved game state
+    const saved = loadGameState();
+    if (!saved) return 'start';
+    if (saved.gameOver) return 'gameOver';
+    return 'playing';
   });
   const [draggingTile, setDraggingTile] = useState<Tile | null>(null);
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
@@ -366,11 +376,13 @@ function App() {
 
   // Keep ref updated with latest handleDropTile
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/immutability
     handleDropTileRef.current = handleDropTile;
   }, [handleDropTile]);
 
   // Keep ref updated with latest handleDropToRack
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/immutability
     handleDropToRackRef.current = handleDropToRack;
   }, [handleDropToRack]);
 
@@ -450,10 +462,10 @@ function App() {
 
       // Check for game over
       const currentPlayerOutOfTiles = newPlayers[prev.currentPlayerIndex].rack.length === 0 && remaining.length === 0;
-      const gameOver = currentPlayerOutOfTiles;
+      const isGameOver = currentPlayerOutOfTiles;
       
       let winner: number | null = null;
-      if (gameOver) {
+      if (isGameOver) {
         // The player who used all their tiles wins if scores are equal
         winner = newPlayers[0].score >= newPlayers[1].score ? 0 : 1;
       }
@@ -470,9 +482,17 @@ function App() {
         turnNumber: prev.turnNumber + 1,
         placedThisTurn: [],
         isFirstMove: false,
-        gameOver,
+        gameOver: isGameOver,
         winner,
       };
+    });
+
+    // Check if game is over after state update
+    setGameState(prev => {
+      if (prev.gameOver) {
+        setGamePhase('gameOver');
+      }
+      return prev;
     });
 
     const wordsPlayed = result.words.map((w) => w.word.toUpperCase()).join(', ');
@@ -563,10 +583,11 @@ function App() {
     setMessage({ text: `Exchanged ${selectedForExchange.size} tile(s)`, type: 'info' });
   }, [selectedForExchange, gameState.tileBag.length]);
 
-  const handleNewGame = useCallback(() => {
+  const handleStartGame = useCallback(() => {
     clearGameState();
     const newGame = initializeGame();
     setGameState(newGame);
+    setGamePhase('playing');
     setDraggingTile(null);
     setDragPosition(null);
     setDragOverCell(null);
@@ -576,8 +597,26 @@ function App() {
     setMessage(null);
   }, []);
 
+  const handleNewGame = useCallback(() => {
+    // Show start modal when clicking New Game
+    setGamePhase('start');
+  }, []);
+
   return (
     <div className="app">
+      {/* Start Game Modal */}
+      {gamePhase === 'start' && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h2>Welcome to Scramble!</h2>
+            <p>A word game for 2 players</p>
+            <button onClick={handleStartGame} className="start-game-btn">
+              Start Game
+            </button>
+          </div>
+        </div>
+      )}
+
       {message && (
         <div className={`message message-${message.type}`}>
           {message.text}
@@ -585,7 +624,7 @@ function App() {
       )}
 
       <header className="header">
-        <h1>Scramble <span className="version">v1.1.0</span></h1>
+        <h1>Scramble <span className="version">v1.2.0</span></h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
             New Game
@@ -598,7 +637,7 @@ function App() {
           <div className="game-spacer-left"></div>
           
           <div className="game-main">
-            {gameState.gameOver && (
+            {gamePhase === 'gameOver' && (
               <div className="game-over">
                 <h2>Game Over!</h2>
                 <p>{gameState.players[gameState.winner!].name} wins with {gameState.players[gameState.winner!].score} points!</p>
