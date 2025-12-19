@@ -704,12 +704,28 @@ function App() {
     setGamePhase('start');
   }, []);
 
+  const handleCloseModal = useCallback(() => {
+    // Only allow closing if there's an existing game in progress
+    const saved = loadGameState();
+    if (saved && !saved.gameOver) {
+      setGamePhase('playing');
+    }
+  }, []);
+
+  // Check if we can close the modal (has existing game)
+  const canCloseModal = loadGameState() !== null && !loadGameState()?.gameOver;
+
   return (
     <div className="app">
       {/* Start Game Modal */}
       {gamePhase === 'start' && (
         <div className="modal-overlay">
           <div className="modal">
+            {canCloseModal && (
+              <button className="modal-close-btn" onClick={handleCloseModal}>
+                <span className="material-icons">close</span>
+              </button>
+            )}
             <h2>Welcome to Scramble!</h2>
             <p>A word game for 2 players</p>
             <div className="player-name-inputs">
@@ -764,7 +780,7 @@ function App() {
       )}
 
       <header className="header">
-        <h1>Scramble <span className="version">v1.4.0</span></h1>
+        <h1>Scramble <span className="version">v1.5.0</span></h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
             New Game
