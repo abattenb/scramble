@@ -493,6 +493,57 @@ body {
   opacity: 0.6;
 }
 
+/* Recalling tiles animation */
+.recalling-tile {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  animation: recallTileAnimation 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation-delay: var(--tile-delay, 0s);
+}
+
+@keyframes recallTileAnimation {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateX(0) translateY(0) scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateX(var(--translate-x)) translateY(var(--translate-y)) scale(1);
+  }
+}
+
+.recalling-tile .tile {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #f5deb3 0%, #deb887 100%);
+  border: 2px solid #8b4513;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.5);
+  position: relative;
+  font-family: 'Georgia', serif;
+}
+
+.recalling-tile .tile-letter {
+  font-size: 28px;
+  font-weight: bold;
+  color: #2c1810;
+  line-height: 1;
+}
+
+.recalling-tile .tile-points {
+  font-size: 12px;
+  color: #2c1810;
+  position: absolute;
+  bottom: 3px;
+  right: 5px;
+}
+
 /* Mobile Responsive Styles */
 @media (max-width: 1090px) {
   .game-container {
@@ -880,6 +931,20 @@ body {
   }
 
   .drag-preview .tile-points {
+    font-size: 10px;
+  }
+
+  /* Recalling tiles for mobile */
+  .recalling-tile .tile {
+    width: 42px;
+    height: 42px;
+  }
+
+  .recalling-tile .tile-letter {
+    font-size: 22px;
+  }
+
+  .recalling-tile .tile-points {
     font-size: 10px;
   }
 }

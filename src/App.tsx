@@ -175,6 +175,9 @@ function App() {
   // Update available state
   const [updateAvailable, setUpdateAvailable] = useState(false);
 
+  // Recalling tiles animation state
+  const [recallingTiles, setRecallingTiles] = useState<Array<{ tile: Tile; row: number; col: number; targetIndex: number }>>([]);
+
   // Auto-dismiss message after 5 seconds
   useEffect(() => {
     if (message) {
@@ -473,36 +476,53 @@ function App() {
 
 
   const handleRecallTiles = useCallback(() => {
-    setGameState((prev) => {
-      const newBoard = prev.board.map((r) => r.map((c) => ({ ...c })));
-      const tilesReturned: Tile[] = [];
+    // Calculate target positions in the rack
+    const currentRackLength = gameState.players[gameState.currentPlayerIndex].rack.length;
 
-      // Remove placed tiles from board
-      for (const placed of prev.placedThisTurn) {
-        newBoard[placed.row][placed.col] = {
-          ...newBoard[placed.row][placed.col],
-          tile: null,
-          isNewlyPlaced: false,
+    // Start animation by setting recalling tiles with target positions
+    const tilesToRecall = gameState.placedThisTurn.map((placed, index) => ({
+      tile: placed.tile,
+      row: placed.row,
+      col: placed.col,
+      targetIndex: currentRackLength + index // Position in the rack after adding tiles back
+    }));
+
+    setRecallingTiles(tilesToRecall);
+
+    // After animation completes, update game state
+    setTimeout(() => {
+      setGameState((prev) => {
+        const newBoard = prev.board.map((r) => r.map((c) => ({ ...c })));
+        const tilesReturned: Tile[] = [];
+
+        // Remove placed tiles from board
+        for (const placed of prev.placedThisTurn) {
+          newBoard[placed.row][placed.col] = {
+            ...newBoard[placed.row][placed.col],
+            tile: null,
+            isNewlyPlaced: false,
+          };
+          tilesReturned.push(placed.tile);
+        }
+
+        // Return tiles to player's rack
+        const newPlayers = [...prev.players] as [Player, Player];
+        newPlayers[prev.currentPlayerIndex] = {
+          ...newPlayers[prev.currentPlayerIndex],
+          rack: [...newPlayers[prev.currentPlayerIndex].rack, ...tilesReturned],
         };
-        tilesReturned.push(placed.tile);
-      }
 
-      // Return tiles to player's rack
-      const newPlayers = [...prev.players] as [Player, Player];
-      newPlayers[prev.currentPlayerIndex] = {
-        ...newPlayers[prev.currentPlayerIndex],
-        rack: [...newPlayers[prev.currentPlayerIndex].rack, ...tilesReturned],
-      };
-
-      return {
-        ...prev,
-        board: newBoard,
-        players: newPlayers,
-        placedThisTurn: [],
-      };
-    });
-    setMessage(null);
-  }, []);
+        return {
+          ...prev,
+          board: newBoard,
+          players: newPlayers,
+          placedThisTurn: [],
+        };
+      });
+      setRecallingTiles([]);
+      setMessage(null);
+    }, 600); // Match CSS animation duration
+  }, [gameState.placedThisTurn, gameState.players, gameState.currentPlayerIndex]);
 
   const handleSubmitWord = useCallback(() => {
     if (!dictionaryLoaded) {
@@ -874,7 +894,7 @@ function App() {
 
       <header className="header">
         <h1 onClick={handleEscapeHatch} style={{ cursor: 'pointer', userSelect: 'none' }}>
-          Scramble <span className="version">v1.17.1</span>
+          Scramble <span className="version">v1.18.1</span>
         </h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
@@ -906,6 +926,59 @@ function App() {
               onTileTouchStart={handleBoardTileTouchStart}
               draggingTileId={draggingTile?.id ?? null}
             />
+
+            {/* Recalling tiles animation */}
+            {recallingTiles.map((recalling, index) => {
+              // Get actual board cell position from DOM
+              const boardCell = document.querySelector(
+                `[data-row="${recalling.row}"][data-col="${recalling.col}"]`
+              );
+
+              // Get actual rack container position from DOM
+              const rackContainer = document.querySelector(
+                `.player-rack.current-player`
+              );
+
+              if (!boardCell || !rackContainer) {
+                return null;
+              }
+
+              const cellRect = boardCell.getBoundingClientRect();
+              const rackRect = rackContainer.getBoundingClientRect();
+
+              // Start position (center of board cell)
+              const startX = cellRect.left + cellRect.width / 2;
+              const startY = cellRect.top + cellRect.height / 2;
+
+              // Target position (approximate position in rack based on target index)
+              // Rack tiles are approximately 60px wide with gaps
+              const rackTileWidth = rackRect.width / (gameState.players[gameState.currentPlayerIndex].rack.length + recallingTiles.length);
+              const targetX = rackRect.left + (recalling.targetIndex * rackTileWidth) + rackTileWidth / 2;
+              const targetY = rackRect.top + rackRect.height / 2;
+
+              // Calculate translation distances
+              const translateX = targetX - startX;
+              const translateY = targetY - startY;
+
+              return (
+                <div
+                  key={`recalling-${recalling.tile.id}-${index}`}
+                  className="recalling-tile"
+                  style={{
+                    left: `${startX}px`,
+                    top: `${startY}px`,
+                    '--tile-delay': `${index * 0.05}s`,
+                    '--translate-x': `${translateX}px`,
+                    '--translate-y': `${translateY}px`
+                  } as React.CSSProperties}
+                >
+                  <div className="tile">
+                    <span className="tile-letter">{recalling.tile.letter}</span>
+                    {!recalling.tile.isBlank && <span className="tile-points">{recalling.tile.points}</span>}
+                  </div>
+                </div>
+              );
+            })}
 
             <div className="turn-controls">
               <button
