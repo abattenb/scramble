@@ -786,7 +786,7 @@ function App() {
       )}
 
       <header className="header">
-        <h1>Scramble <span className="version">v1.7.2</span></h1>
+        <h1>Scramble <span className="version">v1.7.3</span></h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
             New Game
@@ -906,7 +906,7 @@ function App() {
             const isObscuredRack = !isCurrentPlayer || showReadyButton;
             // If obscured, blank out tiles and points
             const rackTiles = isObscuredRack
-              ? player.rack.map((t) => ({ ...t, letter: '', points: 0 }))
+              ? player.rack.map((t) => ({ ...t, letter: '', points: 0, isBlank: false }))
               : player.rack;
             return (
               <div key={player.id} className="player-section">
