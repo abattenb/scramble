@@ -146,11 +146,23 @@ function App() {
       }
     };
 
-    const handleTouchEnd = () => {
-      const currentDragOverCell = dragOverCell;
-      if (currentDragOverCell && handleDropTileRef.current) {
-        handleDropTileRef.current(currentDragOverCell.row, currentDragOverCell.col);
+    const handleTouchEnd = (e: TouchEvent) => {
+      // Check where we ended up
+      const touch = e.changedTouches[0];
+      const element = document.elementFromPoint(touch.clientX, touch.clientY);
+      
+      // Check if dropping on player rack
+      const rack = element?.closest('.player-rack[data-player-rack="current"]');
+      if (rack && handleDropToRackRef.current) {
+        handleDropToRackRef.current();
+      } else {
+        // Try to drop on board cell
+        const currentDragOverCell = dragOverCell;
+        if (currentDragOverCell && handleDropTileRef.current) {
+          handleDropTileRef.current(currentDragOverCell.row, currentDragOverCell.col);
+        }
       }
+      
       setDraggingTile(null);
       setDragPosition(null);
       setDragOverCell(null);
@@ -306,10 +318,61 @@ function App() {
     setMessage(null);
   }, [draggingTile, gameState.board, dragSourceCell]);
 
+  // Handle dropping a tile back to the rack (only for tiles placed this turn)
+  const handleDropToRack = useCallback(() => {
+    if (!draggingTile || !dragSourceCell) return;
+    
+    // Verify this tile was placed this turn
+    const placedTile = gameState.placedThisTurn.find(p => p.tile.id === draggingTile.id);
+    if (!placedTile) return;
+
+    setGameState((prev) => {
+      const newBoard = prev.board.map((r) => r.map((c) => ({ ...c })));
+      
+      // Clear the tile from the board
+      newBoard[dragSourceCell.row][dragSourceCell.col] = {
+        ...newBoard[dragSourceCell.row][dragSourceCell.col],
+        tile: null,
+        isNewlyPlaced: false,
+      };
+
+      // Add tile back to rack
+      const newPlayers = [...prev.players] as [Player, Player];
+      newPlayers[prev.currentPlayerIndex] = {
+        ...newPlayers[prev.currentPlayerIndex],
+        rack: [...newPlayers[prev.currentPlayerIndex].rack, draggingTile],
+      };
+
+      // Remove from placed tiles tracking
+      const newPlacedThisTurn = prev.placedThisTurn.filter(
+        p => p.tile.id !== draggingTile.id
+      );
+
+      return {
+        ...prev,
+        board: newBoard,
+        players: newPlayers,
+        placedThisTurn: newPlacedThisTurn,
+      };
+    });
+
+    setDraggingTile(null);
+    setDragOverCell(null);
+    setDragSourceCell(null);
+  }, [draggingTile, dragSourceCell, gameState.placedThisTurn]);
+
+  // Ref for handleDropToRack for touch handlers
+  const handleDropToRackRef = useRef<(() => void) | null>(null);
+
   // Keep ref updated with latest handleDropTile
   useEffect(() => {
     handleDropTileRef.current = handleDropTile;
   }, [handleDropTile]);
+
+  // Keep ref updated with latest handleDropToRack
+  useEffect(() => {
+    handleDropToRackRef.current = handleDropToRack;
+  }, [handleDropToRack]);
 
   const handleRecallTiles = useCallback(() => {
     setGameState((prev) => {
@@ -641,6 +704,7 @@ function App() {
                 onConfirmExchange={handleConfirmExchange}
                 canExchange={gameState.tileBag.length >= 1}
                 tilesPlacedThisTurn={gameState.placedThisTurn.length > 0}
+                onDropToRack={index === gameState.currentPlayerIndex ? handleDropToRack : undefined}
               />
             </div>
           ))}

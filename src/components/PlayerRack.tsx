@@ -10,6 +10,7 @@ interface PlayerRackProps {
   onDragStart: (e: React.DragEvent, tile: Tile) => void;
   onDragEnd: (e: React.DragEvent) => void;
   onTouchStart: (e: React.TouchEvent, tile: Tile) => void;
+  onDropToRack?: () => void;
   draggingTileId: string | null;
   exchangeMode: boolean;
   selectedForExchange: Set<string>;
@@ -28,6 +29,7 @@ export function PlayerRack({
   onDragStart, 
   onDragEnd,
   onTouchStart,
+  onDropToRack,
   draggingTileId,
   exchangeMode,
   selectedForExchange,
@@ -37,8 +39,25 @@ export function PlayerRack({
   canExchange,
   tilesPlacedThisTurn,
 }: PlayerRackProps) {
+  const handleDragOver = (e: React.DragEvent) => {
+    if (isCurrentPlayer && onDropToRack) {
+      e.preventDefault();
+    }
+  };
+
+  const handleDrop = () => {
+    if (isCurrentPlayer && onDropToRack) {
+      onDropToRack();
+    }
+  };
+
   return (
-    <div className={`player-rack ${isCurrentPlayer ? 'current-player' : ''} ${exchangeMode ? 'exchange-mode' : ''}`}>
+    <div 
+      className={`player-rack ${isCurrentPlayer ? 'current-player' : ''} ${exchangeMode ? 'exchange-mode' : ''}`}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      data-player-rack={isCurrentPlayer ? 'current' : ''}
+    >
       <div className="rack-header">
         <span className="player-name">{playerName}<span className="mobile-score"> - {score}</span></span>
         {isCurrentPlayer && exchangeMode && <span className="turn-indicator exchange">Select tiles to exchange</span>}
