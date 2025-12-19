@@ -817,6 +817,13 @@ function App() {
 
             <div className="turn-controls">
               <button 
+                onClick={handlePass} 
+                disabled={gameState.gameOver}
+                className="control-btn pass-btn"
+              >
+                Pass Turn
+              </button>
+              <button 
                 onClick={handleRecallTiles} 
                 disabled={gameState.placedThisTurn.length === 0 || gameState.gameOver}
                 className="control-btn recall-btn"
@@ -829,13 +836,6 @@ function App() {
                 className="control-btn submit-btn"
               >
                 Submit Word
-              </button>
-              <button 
-                onClick={handlePass} 
-                disabled={gameState.gameOver}
-                className="control-btn pass-btn"
-              >
-                Pass Turn
               </button>
             </div>
           </div>
