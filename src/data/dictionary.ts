@@ -7,7 +7,7 @@ export async function loadDictionary(): Promise<Set<string>> {
   if (dictionary) return dictionary;
   
   try {
-    const response = await fetch('/dict.txt');
+    const response = await fetch(`${import.meta.env.BASE_URL}dict.txt`);
     const text = await response.text();
     const words = text
       .split(/\r?\n/)  // Handle both Windows and Unix line endings
