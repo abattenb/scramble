@@ -62,6 +62,12 @@
   width: 472px;
 }
 
+/* Inactive player rack - tiles not draggable */
+.player-rack.inactive-player .rack-tiles .tile {
+  cursor: default;
+  filter: grayscale(30%);
+}
+
 /* Larger tiles in rack for touch controls */
 .rack-tiles .tile {
   width: 56px;

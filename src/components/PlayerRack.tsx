@@ -53,7 +53,7 @@ export function PlayerRack({
 
   return (
     <div 
-      className={`player-rack ${isCurrentPlayer ? 'current-player' : ''} ${exchangeMode ? 'exchange-mode' : ''}`}
+      className={`player-rack ${isCurrentPlayer ? 'current-player' : 'inactive-player'} ${exchangeMode ? 'exchange-mode' : ''}`}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       data-player-rack={isCurrentPlayer ? 'current' : ''}
@@ -99,10 +99,10 @@ export function PlayerRack({
             tile={tile}
             isDragging={draggingTileId === tile.id}
             isSelected={selectedForExchange.has(tile.id)}
-            onDragStart={exchangeMode ? undefined : onDragStart}
-            onDragEnd={exchangeMode ? undefined : onDragEnd}
-            onTouchStart={exchangeMode ? undefined : onTouchStart}
-            onClick={exchangeMode ? onToggleTileSelection : undefined}
+            onDragStart={isCurrentPlayer && !exchangeMode ? onDragStart : undefined}
+            onDragEnd={isCurrentPlayer && !exchangeMode ? onDragEnd : undefined}
+            onTouchStart={isCurrentPlayer && !exchangeMode ? onTouchStart : undefined}
+            onClick={isCurrentPlayer && exchangeMode ? onToggleTileSelection : undefined}
           />
         ))}
       </div>
