@@ -80,6 +80,7 @@ function App() {
     return saved || initializeGame();
   });
   const [draggingTile, setDraggingTile] = useState<Tile | null>(null);
+  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
   const [dragOverCell, setDragOverCell] = useState<{ row: number; col: number } | null>(null);
   const [dictionaryLoaded, setDictionaryLoaded] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'error' | 'success' | 'info' } | null>(null);
@@ -96,18 +97,63 @@ function App() {
     saveGameState(gameState);
   }, [gameState]);
 
+  // Track mouse/touch position during drag
+  useEffect(() => {
+    if (!draggingTile) return;
+
+    const handleDragOver = (e: DragEvent) => {
+      setDragPosition({ x: e.clientX, y: e.clientY });
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        setDragPosition({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+      }
+    };
+
+    document.addEventListener('dragover', handleDragOver);
+    document.addEventListener('touchmove', handleTouchMove);
+
+    return () => {
+      document.removeEventListener('dragover', handleDragOver);
+      document.removeEventListener('touchmove', handleTouchMove);
+    };
+  }, [draggingTile]);
+
+  // Track if tile is being dragged from board (vs rack)
+  const [dragSourceCell, setDragSourceCell] = useState<{ row: number; col: number } | null>(null);
+
   const handleDragStart = useCallback((e: React.DragEvent, tile: Tile) => {
-    // Only allow current player to drag their tiles
-    if (!gameState.placedThisTurn.some((p) => p.tile.id === tile.id)) {
-      // This is from the rack - allow drag
-      setDraggingTile(tile);
-      e.dataTransfer.effectAllowed = 'move';
-    }
-  }, [gameState.placedThisTurn]);
+    // This is from the rack - allow drag
+    setDraggingTile(tile);
+    setDragPosition({ x: e.clientX, y: e.clientY });
+    setDragSourceCell(null);
+    e.dataTransfer.effectAllowed = 'move';
+    
+    // Hide the default drag image
+    const emptyImg = document.createElement('img');
+    emptyImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    e.dataTransfer.setDragImage(emptyImg, 0, 0);
+  }, []);
+
+  const handleBoardTileDragStart = useCallback((e: React.DragEvent, tile: Tile, row: number, col: number) => {
+    // Dragging a tile from the board that was placed this turn
+    setDraggingTile(tile);
+    setDragPosition({ x: e.clientX, y: e.clientY });
+    setDragSourceCell({ row, col });
+    e.dataTransfer.effectAllowed = 'move';
+    
+    // Hide the default drag image
+    const emptyImg = document.createElement('img');
+    emptyImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    e.dataTransfer.setDragImage(emptyImg, 0, 0);
+  }, []);
 
   const handleDragEnd = useCallback(() => {
     setDraggingTile(null);
+    setDragPosition(null);
     setDragOverCell(null);
+    setDragSourceCell(null);
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent, row: number, col: number) => {
@@ -122,35 +168,67 @@ function App() {
   const handleDropTile = useCallback((row: number, col: number) => {
     if (!draggingTile) return;
     
-    // Check if cell is already occupied
-    if (gameState.board[row][col].tile) {
+    // Check if cell is already occupied (and not the source cell)
+    if (gameState.board[row][col].tile && 
+        !(dragSourceCell && dragSourceCell.row === row && dragSourceCell.col === col)) {
       setDraggingTile(null);
       setDragOverCell(null);
+      setDragSourceCell(null);
+      return;
+    }
+
+    // If dropping on the same cell, do nothing
+    if (dragSourceCell && dragSourceCell.row === row && dragSourceCell.col === col) {
+      setDraggingTile(null);
+      setDragOverCell(null);
+      setDragSourceCell(null);
       return;
     }
 
     setGameState((prev) => {
       const newBoard = prev.board.map((r) => r.map((c) => ({ ...c })));
+      
+      // If dragging from board, clear the source cell
+      if (dragSourceCell) {
+        newBoard[dragSourceCell.row][dragSourceCell.col] = {
+          ...newBoard[dragSourceCell.row][dragSourceCell.col],
+          tile: null,
+          isNewlyPlaced: false,
+        };
+      }
+      
       newBoard[row][col] = {
         ...newBoard[row][col],
         tile: draggingTile,
         isNewlyPlaced: true,
       };
 
-      // Remove tile from current player's rack
-      const newPlayers = [...prev.players] as [Player, Player];
-      newPlayers[prev.currentPlayerIndex] = {
-        ...newPlayers[prev.currentPlayerIndex],
-        rack: newPlayers[prev.currentPlayerIndex].rack.filter(
-          (t) => t.id !== draggingTile.id
-        ),
-      };
+      // Only update rack if dragging from rack (not from board)
+      let newPlayers = prev.players;
+      if (!dragSourceCell) {
+        newPlayers = [...prev.players] as [Player, Player];
+        newPlayers[prev.currentPlayerIndex] = {
+          ...newPlayers[prev.currentPlayerIndex],
+          rack: newPlayers[prev.currentPlayerIndex].rack.filter(
+            (t) => t.id !== draggingTile.id
+          ),
+        };
+      }
 
-      // Track placed tile
-      const newPlacedThisTurn: PlacedTile[] = [
-        ...prev.placedThisTurn,
-        { row, col, tile: draggingTile },
-      ];
+      // Update placed tiles tracking
+      let newPlacedThisTurn: PlacedTile[];
+      if (dragSourceCell) {
+        // Moving tile on board - update the position
+        newPlacedThisTurn = prev.placedThisTurn.map((p) =>
+          p.tile.id === draggingTile.id ? { row, col, tile: draggingTile } : p
+        );
+      } else {
+        // New tile from rack
+        newPlacedThisTurn = [
+          ...prev.placedThisTurn,
+          { row, col, tile: draggingTile },
+        ];
+      }
 
       return {
         ...prev,
@@ -162,8 +240,9 @@ function App() {
 
     setDraggingTile(null);
     setDragOverCell(null);
+    setDragSourceCell(null);
     setMessage(null);
-  }, [draggingTile, gameState.board]);
+  }, [draggingTile, gameState.board, dragSourceCell]);
 
   const handleRecallTiles = useCallback(() => {
     setGameState((prev) => {
@@ -330,6 +409,9 @@ function App() {
               dragOverCell={dragOverCell}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
+              onTileDragStart={handleBoardTileDragStart}
+              onTileDragEnd={handleDragEnd}
+              draggingTileId={draggingTile?.id ?? null}
             />
 
             <div className="turn-controls">
@@ -413,6 +495,22 @@ function App() {
           ))}
         </div>
       </main>
+
+      {/* Floating drag preview */}
+      {draggingTile && dragPosition && (
+        <div
+          className="drag-preview"
+          style={{
+            left: dragPosition.x,
+            top: dragPosition.y,
+          }}
+        >
+          <div className={`tile ${draggingTile.isBlank ? 'blank' : ''}`}>
+            <span className="tile-letter">{draggingTile.isBlank ? '?' : draggingTile.letter}</span>
+            <span className="tile-points">{draggingTile.points}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
