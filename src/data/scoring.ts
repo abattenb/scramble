@@ -17,7 +17,7 @@ export interface PlacementResult {
 
 // Validate all words considering blank tiles must be consistent across words
 // Returns the letter assignments for blank tiles if valid, null otherwise
-function validateWordsWithBlanks(words: WordInfo[], board: BoardCell[][]): Map<string, string> | null {
+function validateWordsWithBlanks(words: WordInfo[], _board: BoardCell[][]): Map<string, string> | null {
   // Find all blank tiles used in any of the words
   const blankTiles = new Map<string, { row: number; col: number; tile: any }>();
 

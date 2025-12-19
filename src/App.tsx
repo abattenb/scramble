@@ -170,7 +170,7 @@ function App() {
 
   // Escape hatch state
   const [escapeHatchTaps, setEscapeHatchTaps] = useState(0);
-  const escapeHatchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const escapeHatchTimeoutRef = useRef<number | null>(null);
 
   // Auto-dismiss message after 5 seconds
   useEffect(() => {
