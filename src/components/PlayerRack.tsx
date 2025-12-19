@@ -60,7 +60,6 @@ export function PlayerRack({
     >
       <div className="rack-header">
         <span className="player-name">{playerName}<span className="mobile-score"> - {score}</span></span>
-        {isCurrentPlayer && exchangeMode && <span className="turn-indicator exchange">Select tiles to exchange</span>}
         {isCurrentPlayer && (
           <div className="rack-actions">
             {!exchangeMode ? (

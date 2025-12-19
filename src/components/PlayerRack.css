@@ -84,8 +84,8 @@
 
 .rack-tiles .tile.selected {
   transform: scale(1.07);
-  background: linear-gradient(135deg, #64b5f6 0%, #42a5f5 100%);
-  box-shadow: 0px 6px 0 #1565c0, 0 0 12px rgba(33, 150, 243, 0.6);
+  background: linear-gradient(135deg, #66bb6a 0%, #4caf50 100%);
+  box-shadow: 0px 6px 0 #2e7d32, 0 0 12px rgba(76, 175, 80, 0.6);
 }
 
 .rack-tiles .tile-letter {
@@ -159,17 +159,18 @@
 }
 
 /* Mobile Responsive Styles */
-@media (max-width: 600px) {
+@media (max-width: 675px) {
   .player-rack {
     padding: 10px;
   }
 
   .rack-tiles {
-    width: auto;
+    width: calc(7 * 42px + 6 * 6px + 2 * 6px);
     min-width: unset;
     gap: 6px;
     padding: 6px;
     flex-wrap: wrap;
+    justify-content: center;
   }
 
   .rack-tiles .tile {
@@ -187,8 +188,8 @@
 
   .rack-tiles .tile.selected {
     transform: scale(1.05);
-    background: linear-gradient(135deg, #64b5f6 0%, #42a5f5 100%);
-    box-shadow: 0px 4px 0 #1565c0, 0 0 10px rgba(33, 150, 243, 0.6);
+    background: linear-gradient(135deg, #66bb6a 0%, #4caf50 100%);
+    box-shadow: 0px 4px 0 #2e7d32, 0 0 10px rgba(76, 175, 80, 0.6);
   }
 
   .rack-tiles .tile-letter {

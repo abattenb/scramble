@@ -73,7 +73,7 @@
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 675px) {
   .tile {
     width: 20px;
     height: 20px;

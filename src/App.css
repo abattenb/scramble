@@ -157,7 +157,7 @@ body {
 
 .letter-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 4px;
   width: 100%;
 }
@@ -433,31 +433,9 @@ body {
     padding: 16px;
   }
 
-  .game-layout {
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-  }
-
   .game-spacer-left {
-    display: none;
-  }
-
-  .game-sidebar {
-    order: -1;
-    flex-direction: row;
-    width: 100%;
-    max-width: 600px;
-    justify-content: space-around;
-    padding: 12px 16px;
-    min-width: unset;
-  }
-
-  .tile-bag-info,
-  .turn-info {
-    flex-direction: row;
-    gap: 8px;
-    align-items: center;
+    min-width: 0;
+    width: 0;
   }
 
   .game-sidebar h3 {
@@ -472,17 +450,6 @@ body {
 
   .tile-label {
     display: none;
-  }
-
-  .letter-distribution {
-    flex-direction: row;
-    gap: 8px;
-    align-items: center;
-  }
-
-  .letter-grid {
-    grid-template-columns: repeat(9, 1fr);
-    gap: 2px;
   }
 
   .letter-item {
@@ -516,7 +483,96 @@ body {
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 840px) {
+  .game-layout {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .game-sidebar {
+    order: -1;
+    width: 100%;
+    max-width: 600px;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  /* Sidebar accordion */
+  .sidebar-toggle {
+    display: flex;
+    width: 100%;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    color: #f5deb3;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+  .sidebar-toggle-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .sidebar-toggle-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sidebar-toggle-turn {
+    color: #c8b896;
+    font-size: 12px;
+  }
+
+  .sidebar-toggle .material-icons {
+    font-size: 20px;
+    color: #ffd700;
+    transition: transform 0.3s ease;
+  }
+
+  .game-sidebar.open .sidebar-toggle .material-icons {
+    transform: rotate(180deg);
+  }
+
+  .sidebar-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 0 16px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+  }
+
+  .game-sidebar.open .sidebar-content {
+    max-height: 500px;
+    padding: 0 16px 16px 16px;
+  }
+
+  .game-sidebar.open .letter-distribution {
+    display: block;
+  }
+
+  .letter-distribution {
+    display: none;
+  }
+
+  /* Hide tile-bag-info and turn-info - info shown in toggle */
+  .tile-bag-info,
+  .turn-info {
+    display: none;
+  }
+}
+
+@media (max-width: 675px) {
   .game-container {
     padding: 8px;
     gap: 4px;
@@ -528,6 +584,8 @@ body {
   }
 
   .game-layout {
+    flex-direction: column;
+    align-items: center;
     gap: 8px;
   }
 
@@ -553,6 +611,11 @@ body {
     width: 100%;
   }
 
+  .player-racks .player-rack.current-player {
+    width: 100%;
+    max-width: none;
+  }
+
 
   .message {
     top: 12px;
@@ -561,6 +624,8 @@ body {
   }
 
   .game-sidebar {
+    order: -1;
+    width: 100%;
     flex-direction: column;
     flex-wrap: nowrap;
     gap: 0;
