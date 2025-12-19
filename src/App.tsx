@@ -123,6 +123,12 @@ function initializeGame(player1Name: string, player2Name: string): GameState {
 type GamePhase = 'start' | 'playing' | 'gameOver';
 
 function App() {
+    // Rack reveal state: { activeRack: 0|1, readyPending: boolean }
+    // Initialize to player 0, will sync with gameState after mount
+    const [rackRevealState, setRackRevealState] = useState<{ activeRack: number; readyPending: boolean }>({
+      activeRack: 0,
+      readyPending: false,
+    });
   const [gameState, setGameState] = useState<GameState>(() => {
     // Try to load saved game state, otherwise initialize with default names
     const saved = loadGameState();
@@ -431,15 +437,9 @@ function App() {
 
   // Keep ref updated with latest handleDropTile
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/immutability
     handleDropTileRef.current = handleDropTile;
   }, [handleDropTile]);
 
-  // Keep ref updated with latest handleDropToRack
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/immutability
-    handleDropToRackRef.current = handleDropToRack;
-  }, [handleDropToRack]);
 
   const handleRecallTiles = useCallback(() => {
     setGameState((prev) => {
@@ -571,7 +571,7 @@ function App() {
 
       // Switch to next player
       const nextPlayerIndex = prev.currentPlayerIndex === 0 ? 1 : 0;
-
+      setRackRevealState({ activeRack: prev.currentPlayerIndex, readyPending: true });
       return {
         ...prev,
         board: newBoard,
@@ -604,14 +604,16 @@ function App() {
   const handlePass = useCallback(() => {
     // Return any placed tiles
     handleRecallTiles();
-    
     // Switch turns
-    setGameState((prev) => ({
-      ...prev,
-      currentPlayerIndex: prev.currentPlayerIndex === 0 ? 1 : 0,
-      turnNumber: prev.turnNumber + 1,
-    }));
-    
+    setGameState((prev) => {
+      const nextPlayerIndex = prev.currentPlayerIndex === 0 ? 1 : 0;
+      setRackRevealState({ activeRack: prev.currentPlayerIndex, readyPending: true });
+      return {
+        ...prev,
+        currentPlayerIndex: nextPlayerIndex,
+        turnNumber: prev.turnNumber + 1,
+      };
+    });
     setMessage({ text: 'Turn passed', type: 'info' });
   }, [handleRecallTiles]);
 
@@ -783,7 +785,7 @@ function App() {
       )}
 
       <header className="header">
-        <h1>Scramble <span className="version">v1.6.0</span></h1>
+        <h1>Scramble <span className="version">v1.7.0</span></h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
             New Game
@@ -893,34 +895,71 @@ function App() {
         </div>
 
         <div className="player-racks">
-          {gameState.players.map((player, index) => (
-            <div key={player.id} className="player-section">
-              <div className={`score-card ${index === gameState.currentPlayerIndex ? 'current' : ''}`}>
-                <span className="score-value">{player.score}</span>
-                {index === gameState.currentPlayerIndex && (
-                  <span className="turn-indicator">Your Turn</span>
+          {gameState.players.map((player, index) => {
+            // Determine rack state
+            // Only obscure the rack of the player whose turn it is NOT
+            const isCurrentPlayer = gameState.currentPlayerIndex === index;
+            // Show Ready button overlay if it's the current player's turn, but rackRevealState is not yet updated
+            const showReadyButton = rackRevealState.readyPending && isCurrentPlayer && rackRevealState.activeRack !== index;
+            // Obscure rack if not the current player OR if showing Ready button (hide tiles until Ready is clicked)
+            const isObscuredRack = !isCurrentPlayer || showReadyButton;
+            // If obscured, blank out tiles and points
+            const rackTiles = isObscuredRack
+              ? player.rack.map((t) => ({ ...t, letter: '', points: 0 }))
+              : player.rack;
+            return (
+              <div key={player.id} className="player-section" style={{ position: 'relative' }}>
+                <div className={`score-card ${index === gameState.currentPlayerIndex ? 'current' : ''}`}>
+                  <span className="score-value">{player.score}</span>
+                  {index === gameState.currentPlayerIndex && (
+                    <span className="turn-indicator">Your Turn</span>
+                  )}
+                </div>
+                <div style={isObscuredRack ? { opacity: 0.4, pointerEvents: 'none', filter: 'blur(0.5px)' } : {}}>
+                  <PlayerRack
+                    tiles={rackTiles}
+                    playerName={player.name}
+                    score={player.score}
+                    isCurrentPlayer={index === gameState.currentPlayerIndex}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    onTouchStart={handleTouchStart}
+                    draggingTileId={draggingTile?.id ?? null}
+                    exchangeMode={index === gameState.currentPlayerIndex && exchangeMode}
+                    selectedForExchange={selectedForExchange}
+                    onToggleExchangeMode={handleToggleExchangeMode}
+                    onToggleTileSelection={handleToggleTileSelection}
+                    onConfirmExchange={handleConfirmExchange}
+                    canExchange={gameState.tileBag.length >= 1}
+                    tilesPlacedThisTurn={gameState.placedThisTurn.length > 0}
+                    onDropToRack={index === gameState.currentPlayerIndex ? handleDropToRack : undefined}
+                  />
+                </div>
+                {showReadyButton && (
+                  <div className="ready-overlay" style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 10,
+                    background: 'rgba(30, 30, 30, 0.85)'
+                  }}>
+                    <button
+                      className="ready-btn"
+                      style={{ fontSize: 32, padding: '32px 64px', borderRadius: 16, background: '#ffd700', color: '#2c1810', fontWeight: 'bold', border: '4px solid #8b4513', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}
+                      onClick={() => setRackRevealState({ activeRack: index, readyPending: false })}
+                    >
+                      Ready
+                    </button>
+                  </div>
                 )}
               </div>
-              <PlayerRack
-                tiles={player.rack}
-                playerName={player.name}
-                score={player.score}
-                isCurrentPlayer={index === gameState.currentPlayerIndex}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-                onTouchStart={handleTouchStart}
-                draggingTileId={draggingTile?.id ?? null}
-                exchangeMode={index === gameState.currentPlayerIndex && exchangeMode}
-                selectedForExchange={selectedForExchange}
-                onToggleExchangeMode={handleToggleExchangeMode}
-                onToggleTileSelection={handleToggleTileSelection}
-                onConfirmExchange={handleConfirmExchange}
-                canExchange={gameState.tileBag.length >= 1}
-                tilesPlacedThisTurn={gameState.placedThisTurn.length > 0}
-                onDropToRack={index === gameState.currentPlayerIndex ? handleDropToRack : undefined}
-              />
-            </div>
-          ))}
+            );
+          })}
         </div>
       </main>
 

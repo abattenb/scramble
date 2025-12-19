@@ -22,7 +22,7 @@ export function TileComponent({ tile, isDragging, isSelected, onDragStart, onDra
       onTouchStart={(e) => onTouchStart?.(e, tile)}
     >
       <span className="tile-letter">{tile.isBlank ? '?' : tile.letter}</span>
-      <span className="tile-points">{tile.points}</span>
+      <span className="tile-points">{tile.letter === '' ? '' : tile.points}</span>
     </div>
   );
 }
