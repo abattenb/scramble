@@ -2,7 +2,6 @@
   background: linear-gradient(180deg, #4a3728 0%, #2c1810 100%);
   border-radius: 8px;
   padding: 16px;
-  margin: 16px 0;
   border: 3px solid #8b4513;
   opacity: 0.7;
   transition: opacity 0.3s ease, border-color 0.3s ease;
@@ -148,7 +147,6 @@
 @media (max-width: 600px) {
   .player-rack {
     padding: 10px;
-    margin: 8px 0;
   }
 
   .rack-tiles {
