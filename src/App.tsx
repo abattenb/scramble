@@ -874,7 +874,7 @@ function App() {
 
       <header className="header">
         <h1 onClick={handleEscapeHatch} style={{ cursor: 'pointer', userSelect: 'none' }}>
-          Scramble <span className="version">v1.16.0</span>
+          Scramble <span className="version">v1.17.1</span>
         </h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
@@ -908,9 +908,9 @@ function App() {
             />
 
             <div className="turn-controls">
-              <button 
-                onClick={handlePass} 
-                disabled={gameState.gameOver}
+              <button
+                onClick={handlePass}
+                disabled={gameState.gameOver || (hidePlayerTiles && rackRevealState.readyPending)}
                 className="control-btn pass-btn"
               >
                 Pass Turn
