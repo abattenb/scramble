@@ -3,7 +3,7 @@
   border-radius: 8px;
   padding: 16px;
   border: 3px solid #8b4513;
-  opacity: 0.7;
+  opacity: 0.5;
   transition: opacity 0.3s ease, border-color 0.3s ease;
 }
 
@@ -29,6 +29,7 @@
   font-size: 18px;
   font-weight: bold;
   color: #f5deb3;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .mobile-score {
@@ -71,6 +72,20 @@
 .rack-tiles .tile {
   width: 56px;
   height: 56px;
+  border: none;
+  box-shadow: 0px 4px 0 #9d7652, 2px 2px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.rack-tiles .tile:hover {
+  transform: scale(1.08) translateY(-2px);
+  box-shadow: 0px 6px 0 #9d7652, 3px 3px 10px rgba(0, 0, 0, 0.3);
+}
+
+.rack-tiles .tile.selected {
+  transform: scale(1.07);
+  background: linear-gradient(135deg, #64b5f6 0%, #42a5f5 100%);
+  box-shadow: 0px 6px 0 #1565c0, 0 0 12px rgba(33, 150, 243, 0.6);
 }
 
 .rack-tiles .tile-letter {
@@ -160,6 +175,20 @@
   .rack-tiles .tile {
     width: 42px;
     height: 42px;
+    border: none;
+    box-shadow: 0px 3px 0 #9d7652, 1px 1px 6px rgba(0, 0, 0, 0.2);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  }
+
+  .rack-tiles .tile:hover {
+    transform: scale(1.08) translateY(-2px);
+    box-shadow: 0px 4px 0 #9d7652, 2px 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .rack-tiles .tile.selected {
+    transform: scale(1.05);
+    background: linear-gradient(135deg, #64b5f6 0%, #42a5f5 100%);
+    box-shadow: 0px 4px 0 #1565c0, 0 0 10px rgba(33, 150, 243, 0.6);
   }
 
   .rack-tiles .tile-letter {

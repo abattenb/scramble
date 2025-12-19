@@ -205,14 +205,16 @@ body {
   align-items: center;
   justify-content: center;
   padding: 16px 24px;
-  background: rgba(0, 0, 0, 0.3);
+  background: linear-gradient(180deg, #4a3728 0%, #2c1810 100%);
   border-radius: 8px;
-  border: 3px solid #444;
+  border: 3px solid #8b4513;
+  opacity: 0.5;
   transition: all 0.3s ease;
   min-width: 140px;
 }
 
 .score-card.current {
+  opacity: 1;
   border-color: #ffd700;
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
 }
@@ -229,7 +231,11 @@ body {
 .score-value {
   font-size: 56px;
   font-weight: bold;
-  color: #fff;
+  background: linear-gradient(180deg, #fff 0%, #c8b896 100%);
+  color: transparent;
+  -webkit-background-clip: text;
+  -moz-background-clip: text;
+  background-clip: text;
 }
 
 .score-card .turn-indicator {

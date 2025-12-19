@@ -787,7 +787,7 @@ function App() {
       )}
 
       <header className="header">
-        <h1>Scramble <span className="version">v1.8.7</span></h1>
+        <h1>Scramble <span className="version">v1.10.2</span></h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
             New Game
@@ -919,7 +919,7 @@ function App() {
                 </div>
                 <div style={{
                   position: 'relative',
-                  ...(isObscuredRack && !showReadyButton ? { opacity: 0.4, pointerEvents: 'none', filter: 'blur(0.5px)' } : {})
+                  ...(isObscuredRack && !showReadyButton ? { pointerEvents: 'none', filter: 'blur(0.5px)' } : {})
                 }}>
                   <PlayerRack
                     tiles={rackTiles}
@@ -955,8 +955,27 @@ function App() {
                     }}>
                       <button
                         className="ready-btn"
-                        style={{ fontSize: 32, padding: '32px 64px', borderRadius: 16, background: '#ffd700', color: '#2c1810', fontWeight: 'bold', border: '4px solid #8b4513', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}
+                        style={{
+                          fontSize: 32,
+                          padding: '32px 64px',
+                          borderRadius: 16,
+                          background: 'linear-gradient(180deg, #ffd700 0%, #daa520 100%)',
+                          color: '#2c1810',
+                          fontWeight: 'bold',
+                          border: '4px solid #8b4513',
+                          boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
                         onClick={() => setRackRevealState({ activeRack: index, readyPending: false })}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'scale(1.05)';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.4)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'scale(1)';
+                          e.currentTarget.style.boxShadow = '0 4px 24px rgba(0,0,0,0.4)';
+                        }}
                       >
                         {player.name} ready!
                       </button>
