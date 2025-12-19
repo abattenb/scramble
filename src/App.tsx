@@ -84,6 +84,10 @@ function App() {
   const [dragOverCell, setDragOverCell] = useState<{ row: number; col: number } | null>(null);
   const [dictionaryLoaded, setDictionaryLoaded] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'error' | 'success' | 'info' } | null>(null);
+  
+  // Exchange tiles state
+  const [exchangeMode, setExchangeMode] = useState(false);
+  const [selectedForExchange, setSelectedForExchange] = useState<Set<string>>(new Set());
 
   // Load dictionary on mount
   useEffect(() => {
@@ -366,11 +370,80 @@ function App() {
     setMessage({ text: 'Turn passed', type: 'info' });
   }, [handleRecallTiles]);
 
+  // Exchange tiles handlers
+  const handleToggleExchangeMode = useCallback(() => {
+    setExchangeMode((prev) => !prev);
+    setSelectedForExchange(new Set());
+  }, []);
+
+  const handleToggleTileSelection = useCallback((tile: Tile) => {
+    setSelectedForExchange((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(tile.id)) {
+        newSet.delete(tile.id);
+      } else {
+        newSet.add(tile.id);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const handleConfirmExchange = useCallback(() => {
+    if (selectedForExchange.size === 0) return;
+    if (gameState.tileBag.length < selectedForExchange.size) {
+      setMessage({ text: 'Not enough tiles in the bag', type: 'error' });
+      return;
+    }
+
+    setGameState((prev) => {
+      const currentPlayer = prev.players[prev.currentPlayerIndex];
+      
+      // Separate tiles to exchange and tiles to keep
+      const tilesToExchange = currentPlayer.rack.filter((t) => selectedForExchange.has(t.id));
+      const tilesToKeep = currentPlayer.rack.filter((t) => !selectedForExchange.has(t.id));
+      
+      // Draw new tiles from bag
+      const { drawn, remaining } = drawTiles(prev.tileBag, tilesToExchange.length);
+      
+      // Put exchanged tiles back in bag and shuffle
+      const newBag = [...remaining, ...tilesToExchange];
+      // Shuffle the bag
+      for (let i = newBag.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newBag[i], newBag[j]] = [newBag[j], newBag[i]];
+      }
+      
+      // Update player's rack
+      const newPlayers = [...prev.players] as [Player, Player];
+      newPlayers[prev.currentPlayerIndex] = {
+        ...currentPlayer,
+        rack: [...tilesToKeep, ...drawn],
+      };
+
+      // Switch to next player
+      const nextPlayerIndex = prev.currentPlayerIndex === 0 ? 1 : 0;
+
+      return {
+        ...prev,
+        players: newPlayers,
+        tileBag: newBag,
+        currentPlayerIndex: nextPlayerIndex,
+        turnNumber: prev.turnNumber + 1,
+      };
+    });
+
+    setExchangeMode(false);
+    setSelectedForExchange(new Set());
+    setMessage({ text: `Exchanged ${selectedForExchange.size} tile(s)`, type: 'info' });
+  }, [selectedForExchange, gameState.tileBag.length]);
+
   const handleNewGame = useCallback(() => {
     clearGameState();
     setGameState(initializeGame());
     setDraggingTile(null);
     setDragOverCell(null);
+    setExchangeMode(false);
+    setSelectedForExchange(new Set());
     setMessage(null);
   }, []);
 
@@ -482,6 +555,9 @@ function App() {
               <div className={`score-card ${index === gameState.currentPlayerIndex ? 'current' : ''}`}>
                 <span className="score-name">{player.name}</span>
                 <span className="score-value">{player.score}</span>
+                {index === gameState.currentPlayerIndex && (
+                  <span className="turn-indicator">Your Turn</span>
+                )}
               </div>
               <PlayerRack
                 tiles={player.rack}
@@ -490,6 +566,13 @@ function App() {
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
                 draggingTileId={draggingTile?.id ?? null}
+                exchangeMode={index === gameState.currentPlayerIndex && exchangeMode}
+                selectedForExchange={selectedForExchange}
+                onToggleExchangeMode={handleToggleExchangeMode}
+                onToggleTileSelection={handleToggleTileSelection}
+                onConfirmExchange={handleConfirmExchange}
+                canExchange={gameState.tileBag.length >= 1}
+                tilesPlacedThisTurn={gameState.placedThisTurn.length > 0}
               />
             </div>
           ))}

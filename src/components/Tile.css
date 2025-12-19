@@ -13,6 +13,7 @@
   box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
   position: relative;
   font-family: 'Georgia', serif;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
 .tile:hover {
@@ -23,6 +24,12 @@
 .tile.dragging {
   opacity: 0.5;
   cursor: grabbing;
+}
+
+.tile.selected {
+  border-color: #2196f3;
+  box-shadow: 0 0 12px rgba(33, 150, 243, 0.6);
+  transform: scale(1.08);
 }
 
 .tile.blank .tile-letter {

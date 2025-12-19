@@ -216,6 +216,16 @@ body {
   color: #fff;
 }
 
+.score-card .turn-indicator {
+  background: #ffd700;
+  color: #2c1810;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+  margin-top: 8px;
+}
+
 .player-racks {
   display: flex;
   flex-direction: column;

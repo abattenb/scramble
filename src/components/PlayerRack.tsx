@@ -9,6 +9,13 @@ interface PlayerRackProps {
   onDragStart: (e: React.DragEvent, tile: Tile) => void;
   onDragEnd: (e: React.DragEvent) => void;
   draggingTileId: string | null;
+  exchangeMode: boolean;
+  selectedForExchange: Set<string>;
+  onToggleExchangeMode: () => void;
+  onToggleTileSelection: (tile: Tile) => void;
+  onConfirmExchange: () => void;
+  canExchange: boolean;
+  tilesPlacedThisTurn: boolean;
 }
 
 export function PlayerRack({ 
@@ -17,13 +24,20 @@ export function PlayerRack({
   isCurrentPlayer, 
   onDragStart, 
   onDragEnd,
-  draggingTileId 
+  draggingTileId,
+  exchangeMode,
+  selectedForExchange,
+  onToggleExchangeMode,
+  onToggleTileSelection,
+  onConfirmExchange,
+  canExchange,
+  tilesPlacedThisTurn,
 }: PlayerRackProps) {
   return (
-    <div className={`player-rack ${isCurrentPlayer ? 'current-player' : ''}`}>
+    <div className={`player-rack ${isCurrentPlayer ? 'current-player' : ''} ${exchangeMode ? 'exchange-mode' : ''}`}>
       <div className="rack-header">
         <span className="player-name">{playerName}</span>
-        {isCurrentPlayer && <span className="turn-indicator">Your Turn</span>}
+        {isCurrentPlayer && exchangeMode && <span className="turn-indicator exchange">Select tiles to exchange</span>}
       </div>
       <div className="rack-tiles">
         {tiles.map((tile) => (
@@ -31,11 +45,43 @@ export function PlayerRack({
             key={tile.id}
             tile={tile}
             isDragging={draggingTileId === tile.id}
-            onDragStart={onDragStart}
-            onDragEnd={onDragEnd}
+            isSelected={selectedForExchange.has(tile.id)}
+            onDragStart={exchangeMode ? undefined : onDragStart}
+            onDragEnd={exchangeMode ? undefined : onDragEnd}
+            onClick={exchangeMode ? onToggleTileSelection : undefined}
           />
         ))}
       </div>
+      {isCurrentPlayer && (
+        <div className="rack-actions">
+          {!exchangeMode ? (
+            <button 
+              className="exchange-btn"
+              onClick={onToggleExchangeMode}
+              disabled={!canExchange || tilesPlacedThisTurn}
+              title={!canExchange ? "Not enough tiles in bag" : tilesPlacedThisTurn ? "Recall tiles first" : "Exchange tiles with the bag"}
+            >
+              Exchange Tiles
+            </button>
+          ) : (
+            <>
+              <button 
+                className="cancel-exchange-btn"
+                onClick={onToggleExchangeMode}
+              >
+                Cancel
+              </button>
+              <button 
+                className="confirm-exchange-btn"
+                onClick={onConfirmExchange}
+                disabled={selectedForExchange.size === 0}
+              >
+                Confirm ({selectedForExchange.size})
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
