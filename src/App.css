@@ -823,6 +823,9 @@ body {
 /* Game settings toggle */
 .game-settings {
   margin-bottom: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .toggle-setting {

@@ -849,7 +849,7 @@ function App() {
 
       <header className="header">
         <h1 onClick={handleEscapeHatch} style={{ cursor: 'pointer', userSelect: 'none' }}>
-          Scramble <span className="version">v1.13.1</span>
+          Scramble <span className="version">v1.14.0</span>
         </h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
