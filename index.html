@@ -39,18 +39,78 @@
     <script type="module">
       // Register service worker for PWA functionality
       if ('serviceWorker' in navigator && import.meta.env.PROD) {
+        let registration = null;
+
+        // Function to notify app of available update
+        const notifyUpdateAvailable = () => {
+          console.log('Update available - notifying app');
+          window.dispatchEvent(new CustomEvent('swUpdateAvailable', {
+            detail: { timestamp: Date.now() }
+          }));
+        };
+
+        // Function to check for updates
+        const checkForUpdates = () => {
+          if (registration) {
+            console.log('Checking for service worker updates...');
+            registration.update();
+          }
+        };
+
         window.addEventListener('load', () => {
           const swPath = import.meta.env.BASE_URL + 'sw.js';
           navigator.serviceWorker.register(swPath, {
             scope: import.meta.env.BASE_URL
           })
-            .then((registration) => {
+            .then((reg) => {
+              registration = reg;
               console.log('ServiceWorker registered:', registration);
 
-              // Check for updates periodically
-              setInterval(() => {
-                registration.update();
-              }, 60000); // Check every minute
+              // Check if there's already an update waiting
+              if (reg.waiting) {
+                console.log('Service worker already waiting');
+                notifyUpdateAvailable();
+              }
+
+              // Check if there's one installing
+              if (reg.installing) {
+                console.log('Service worker installing');
+                reg.installing.addEventListener('statechange', (e) => {
+                  if (e.target.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('New service worker installed');
+                    notifyUpdateAvailable();
+                  }
+                });
+              }
+
+              // Listen for new service workers arriving
+              reg.addEventListener('updatefound', () => {
+                console.log('Update found');
+                const newWorker = reg.installing;
+
+                newWorker.addEventListener('statechange', () => {
+                  // When the new service worker is installed and there's an existing one
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('New service worker installed and ready');
+                    notifyUpdateAvailable();
+                  }
+                });
+              });
+
+              // Check for updates when page gains focus (user reopens PWA)
+              document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) {
+                  checkForUpdates();
+                }
+              });
+
+              // Check for updates when page gains focus (alternative method)
+              window.addEventListener('focus', () => {
+                checkForUpdates();
+              });
+
+              // Initial check for updates
+              checkForUpdates();
             })
             .catch((error) => {
               console.log('ServiceWorker registration failed:', error);
@@ -59,13 +119,29 @@
           // Listen for messages from service worker
           navigator.serviceWorker.addEventListener('message', (event) => {
             if (event.data && event.data.type === 'NEW_VERSION_AVAILABLE') {
-              // Dispatch custom event that React can listen to
-              window.dispatchEvent(new CustomEvent('swUpdateAvailable', {
-                detail: { version: event.data.version }
-              }));
+              console.log('Received NEW_VERSION_AVAILABLE message');
+              notifyUpdateAvailable();
             }
           });
+
+          // Listen for controller change (new service worker took over)
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            console.log('Controller changed - reloading page');
+            window.location.reload();
+          });
         });
+
+        // Expose function to trigger service worker update
+        window.updateServiceWorker = () => {
+          if (registration && registration.waiting) {
+            console.log('Telling waiting service worker to skip waiting');
+            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          } else {
+            console.log('No waiting service worker to update');
+            // Just reload anyway in case there was a race condition
+            window.location.reload();
+          }
+        };
       }
     </script>
   </body>

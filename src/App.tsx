@@ -6,6 +6,7 @@ import { loadDictionary } from './data/dictionary';
 import { findWordsFromPlacement } from './data/scoring';
 import { GameBoard } from './components/GameBoard';
 import { PlayerRack } from './components/PlayerRack';
+import { VERSION } from './version';
 import './App.css';
 
 const STORAGE_KEY = 'scramble-game-state';
@@ -1124,7 +1125,13 @@ function App() {
       {updateAvailable && (
         <div className="update-notification">
           <span>New version available!</span>
-          <button onClick={() => window.location.reload()} className="update-btn">
+          <button onClick={() => {
+            if (typeof (window as any).updateServiceWorker === 'function') {
+              (window as any).updateServiceWorker();
+            } else {
+              window.location.reload();
+            }
+          }} className="update-btn">
             Update Now
           </button>
           <button onClick={() => setUpdateAvailable(false)} className="update-dismiss">
@@ -1135,7 +1142,7 @@ function App() {
 
       <header className="header">
         <h1 onClick={handleEscapeHatch} style={{ cursor: 'pointer', userSelect: 'none' }}>
-          Scramble <span className="version">v1.22.0</span>
+          Scramble <span className="version">v{VERSION}</span>
         </h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
