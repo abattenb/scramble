@@ -12,11 +12,26 @@ const STORAGE_KEY = 'scramble-game-state';
 const PLAYER_NAMES_KEY = 'scramble-player-names';
 const GAME_SETTINGS_KEY = 'scramble-game-settings';
 
+interface PlayerSettings {
+  name: string;
+  color: string;
+}
+
 interface GameSettings {
   expertMode: boolean;
   hidePlayerTiles: boolean;
   randomizePlayer1: boolean;
 }
+
+// Available player colors
+const PLAYER_COLORS = [
+  '#ffd700', // Gold
+  '#4caf50', // Green
+  '#2196f3', // Blue
+  '#f44336', // Red
+  '#ba68c8', // Purple (lighter tint)
+  '#ff9800', // Orange
+];
 
 function saveGameSettings(settings: GameSettings): void {
   try {
@@ -79,24 +94,56 @@ function clearGameState(): void {
   }
 }
 
-function savePlayerNames(names: { player1: string; player2: string }): void {
+function savePlayerSettings(settings: { player1: PlayerSettings; player2: PlayerSettings }): void {
   try {
-    localStorage.setItem(PLAYER_NAMES_KEY, JSON.stringify(names));
+    localStorage.setItem(PLAYER_NAMES_KEY, JSON.stringify(settings));
   } catch (error) {
-    console.error('Failed to save player names:', error);
+    console.error('Failed to save player settings:', error);
   }
 }
 
-function loadPlayerNames(): { player1: string; player2: string } {
+function loadPlayerSettings(): { player1: PlayerSettings; player2: PlayerSettings } {
+  const defaults = {
+    player1: { name: 'Player 1', color: PLAYER_COLORS[0] },
+    player2: { name: 'Player 2', color: PLAYER_COLORS[1] }
+  };
   try {
     const saved = localStorage.getItem(PLAYER_NAMES_KEY);
     if (saved) {
-      return JSON.parse(saved) as { player1: string; player2: string };
+      const parsed = JSON.parse(saved);
+      // Handle legacy format (just names) and migrate to new format
+      if (typeof parsed.player1 === 'string') {
+        return {
+          player1: { name: parsed.player1, color: PLAYER_COLORS[0] },
+          player2: { name: parsed.player2, color: PLAYER_COLORS[1] }
+        };
+      }
+      return parsed as { player1: PlayerSettings; player2: PlayerSettings };
     }
   } catch (error) {
-    console.error('Failed to load player names:', error);
+    console.error('Failed to load player settings:', error);
   }
-  return { player1: 'Player 1', player2: 'Player 2' };
+  return defaults;
+}
+
+function loadPlayerNames(): { player1: string; player2: string } {
+  const settings = loadPlayerSettings();
+  return {
+    player1: settings.player1.name,
+    player2: settings.player2.name
+  };
+}
+
+function getPlayerColor(playerName: string): string {
+  const settings = loadPlayerSettings();
+  if (playerName === settings.player1.name) {
+    return settings.player1.color;
+  }
+  if (playerName === settings.player2.name) {
+    return settings.player2.color;
+  }
+  // Fallback to first color if no match
+  return PLAYER_COLORS[0];
 }
 
 function initializeGame(player1Name: string, player2Name: string): GameState {
@@ -147,9 +194,12 @@ function App() {
     if (saved.gameOver) return 'gameOver';
     return 'playing';
   });
-  // Player names for the start modal
-  const [player1Name, setPlayer1Name] = useState<string>(() => loadPlayerNames().player1);
-  const [player2Name, setPlayer2Name] = useState<string>(() => loadPlayerNames().player2);
+  // Player settings for the start modal
+  const [player1Name, setPlayer1Name] = useState<string>(() => loadPlayerSettings().player1.name);
+  const [player2Name, setPlayer2Name] = useState<string>(() => loadPlayerSettings().player2.name);
+  const [player1Color, setPlayer1Color] = useState<string>(() => loadPlayerSettings().player1.color);
+  const [player2Color, setPlayer2Color] = useState<string>(() => loadPlayerSettings().player2.color);
+  const [showColorPicker, setShowColorPicker] = useState<1 | 2 | null>(null);
   // Game settings
   const [expertMode, setExpertMode] = useState<boolean>(() => loadGameSettings().expertMode);
   const [hidePlayerTiles, setHidePlayerTiles] = useState<boolean>(() => loadGameSettings().hidePlayerTiles);
@@ -741,16 +791,22 @@ function App() {
   }, [selectedForExchange, gameState.tileBag.length]);
 
   const handleStartGame = useCallback(() => {
-    // Save player names and settings for future sessions
+    // Save player settings for future sessions
     let name1 = player1Name.trim() || 'Player 1';
     let name2 = player2Name.trim() || 'Player 2';
+    let color1 = player1Color;
+    let color2 = player2Color;
 
     // Randomize player order if enabled
     if (randomizePlayer1 && Math.random() < 0.5) {
       [name1, name2] = [name2, name1];
+      [color1, color2] = [color2, color1];
     }
 
-    savePlayerNames({ player1: name1, player2: name2 });
+    savePlayerSettings({
+      player1: { name: name1, color: color1 },
+      player2: { name: name2, color: color2 }
+    });
     saveGameSettings({ expertMode, hidePlayerTiles, randomizePlayer1 });
 
     clearGameState();
@@ -765,6 +821,7 @@ function App() {
     setSelectedForExchange(new Set());
     setMessage(null);
     setShowAdditionalOptions(false);
+    setShowColorPicker(null);
 
     // If hidePlayerTiles is enabled, require first player to click "Player ready"
     if (hidePlayerTiles) {
@@ -772,7 +829,7 @@ function App() {
     } else {
       setRackRevealState({ activeRack: 0, readyPending: false });
     }
-  }, [player1Name, player2Name, expertMode, hidePlayerTiles, randomizePlayer1]);
+  }, [player1Name, player2Name, player1Color, player2Color, expertMode, hidePlayerTiles, randomizePlayer1]);
 
   const handleNewGame = useCallback(() => {
     // Show start modal when clicking New Game
@@ -841,25 +898,135 @@ function App() {
                 <div className="player-name-inputs">
                   <div className="player-name-field">
                     <label htmlFor="player1-name">Player 1</label>
-                    <input
-                      id="player1-name"
-                      type="text"
-                      value={player1Name}
-                      onChange={(e) => setPlayer1Name(e.target.value)}
-                      placeholder="Player 1"
-                      maxLength={20}
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => setShowColorPicker(showColorPicker === 1 ? null : 1)}
+                          style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            border: '2px solid #8b4513',
+                            background: player1Color,
+                            cursor: 'pointer',
+                            flexShrink: 0,
+                            padding: 0
+                          }}
+                          aria-label="Choose color"
+                        />
+                        <input
+                          id="player1-name"
+                          type="text"
+                          value={player1Name}
+                          onChange={(e) => setPlayer1Name(e.target.value)}
+                          placeholder="Player 1"
+                          maxLength={20}
+                          style={{ flex: 1 }}
+                        />
+                      </div>
+                      {showColorPicker === 1 && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '40px',
+                          left: 0,
+                          background: 'rgba(44, 24, 16, 0.98)',
+                          border: '2px solid #8b4513',
+                          borderRadius: '8px',
+                          padding: '8px',
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(3, 1fr)',
+                          gap: '8px',
+                          zIndex: 1000
+                        }}>
+                          {PLAYER_COLORS.map((color) => (
+                            <button
+                              key={color}
+                              type="button"
+                              onClick={() => {
+                                setPlayer1Color(color);
+                                setShowColorPicker(null);
+                              }}
+                              style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '50%',
+                                border: player1Color === color ? '3px solid #ffd700' : '2px solid #8b4513',
+                                background: color,
+                                cursor: 'pointer',
+                                padding: 0
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="player-name-field">
                     <label htmlFor="player2-name">Player 2</label>
-                    <input
-                      id="player2-name"
-                      type="text"
-                      value={player2Name}
-                      onChange={(e) => setPlayer2Name(e.target.value)}
-                      placeholder="Player 2"
-                      maxLength={20}
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => setShowColorPicker(showColorPicker === 2 ? null : 2)}
+                          style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            border: '2px solid #8b4513',
+                            background: player2Color,
+                            cursor: 'pointer',
+                            flexShrink: 0,
+                            padding: 0
+                          }}
+                          aria-label="Choose color"
+                        />
+                        <input
+                          id="player2-name"
+                          type="text"
+                          value={player2Name}
+                          onChange={(e) => setPlayer2Name(e.target.value)}
+                          placeholder="Player 2"
+                          maxLength={20}
+                          style={{ flex: 1 }}
+                        />
+                      </div>
+                      {showColorPicker === 2 && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '40px',
+                          left: 0,
+                          background: 'rgba(44, 24, 16, 0.98)',
+                          border: '2px solid #8b4513',
+                          borderRadius: '8px',
+                          padding: '8px',
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(3, 1fr)',
+                          gap: '8px',
+                          zIndex: 1000
+                        }}>
+                          {PLAYER_COLORS.map((color) => (
+                            <button
+                              key={color}
+                              type="button"
+                              onClick={() => {
+                                setPlayer2Color(color);
+                                setShowColorPicker(null);
+                              }}
+                              style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '50%',
+                                border: player2Color === color ? '3px solid #ffd700' : '2px solid #8b4513',
+                                background: color,
+                                cursor: 'pointer',
+                                padding: 0
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="game-settings">
@@ -949,7 +1116,7 @@ function App() {
 
       <header className="header">
         <h1 onClick={handleEscapeHatch} style={{ cursor: 'pointer', userSelect: 'none' }}>
-          Scramble <span className="version">v1.20.2</span>
+          Scramble <span className="version">v1.21.0</span>
         </h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
@@ -1127,10 +1294,20 @@ function App() {
               : player.rack;
             return (
               <div key={player.id} className="player-section">
-                <div className={`score-card ${index === gameState.currentPlayerIndex ? 'current' : ''}`}>
-                  <span className="score-value">{player.score}</span>
+                <div
+                  className={`score-card ${index === gameState.currentPlayerIndex ? 'current' : ''}`}
+                  style={index === gameState.currentPlayerIndex ? {
+                    borderColor: getPlayerColor(player.name),
+                    boxShadow: `0 0 20px ${getPlayerColor(player.name)}33`
+                  } : undefined}
+                >
+                  <span className="score-value" style={{
+                    color: getPlayerColor(player.name)
+                  }}>{player.score}</span>
                   {index === gameState.currentPlayerIndex && (
-                    <span className="turn-indicator">Your Turn</span>
+                    <span className="turn-indicator" style={{
+                      background: getPlayerColor(player.name)
+                    }}>Your Turn</span>
                   )}
                 </div>
                 <div style={{
@@ -1142,6 +1319,7 @@ function App() {
                     playerName={player.name}
                     score={player.score}
                     isCurrentPlayer={index === gameState.currentPlayerIndex}
+                    playerColor={getPlayerColor(player.name)}
                     onDragStart={handleDragStart}
                     onDragEnd={handleDragEnd}
                     onTouchStart={handleTouchStart}

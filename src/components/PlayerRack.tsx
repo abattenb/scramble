@@ -7,6 +7,7 @@ interface PlayerRackProps {
   playerName: string;
   score: number;
   isCurrentPlayer: boolean;
+  playerColor: string;
   onDragStart: (e: React.DragEvent, tile: Tile) => void;
   onDragEnd: (e: React.DragEvent) => void;
   onTouchStart: (e: React.TouchEvent, tile: Tile) => void;
@@ -21,12 +22,13 @@ interface PlayerRackProps {
   tilesPlacedThisTurn: boolean;
 }
 
-export function PlayerRack({ 
-  tiles, 
-  playerName, 
+export function PlayerRack({
+  tiles,
+  playerName,
   score,
-  isCurrentPlayer, 
-  onDragStart, 
+  isCurrentPlayer,
+  playerColor,
+  onDragStart,
   onDragEnd,
   onTouchStart,
   onDropToRack,
@@ -52,11 +54,15 @@ export function PlayerRack({
   };
 
   return (
-    <div 
+    <div
       className={`player-rack ${isCurrentPlayer ? 'current-player' : 'inactive-player'} ${exchangeMode ? 'exchange-mode' : ''}`}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       data-player-rack={isCurrentPlayer ? 'current' : ''}
+      style={isCurrentPlayer ? {
+        borderColor: playerColor,
+        boxShadow: `0 0 20px ${playerColor}4d`
+      } : undefined}
     >
       <div className="rack-header">
         <span className="player-name">{playerName}<span className="mobile-score"> - {score}</span></span>

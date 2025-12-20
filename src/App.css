@@ -237,12 +237,7 @@ body {
 .score-value {
   font-size: 56px;
   font-weight: bold;
-  background: linear-gradient(180deg, #ffd700 0%, #ffed4e 30%, #755903 100%);
-  -webkit-background-clip: text;
-  -moz-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .score-card .turn-indicator {
