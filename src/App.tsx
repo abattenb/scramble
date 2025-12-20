@@ -755,6 +755,13 @@ function App() {
     setExchangeMode(false);
     setSelectedForExchange(new Set());
     setMessage(null);
+
+    // If hidePlayerTiles is enabled, require first player to click "Player ready"
+    if (hidePlayerTiles) {
+      setRackRevealState({ activeRack: -1, readyPending: true });
+    } else {
+      setRackRevealState({ activeRack: 0, readyPending: false });
+    }
   }, [player1Name, player2Name, expertMode, hidePlayerTiles]);
 
   const handleNewGame = useCallback(() => {
@@ -851,7 +858,7 @@ function App() {
                 <span className="toggle-slider"></span>
                 <span className="toggle-label">
                   Expert Mode
-                  <span className="toggle-subtext">Wrong word ends turn</span>
+                  <span className="toggle-subtext">Playing a wrong word ends turn</span>
                 </span>
               </label>
               <label className="toggle-setting">
@@ -894,7 +901,7 @@ function App() {
 
       <header className="header">
         <h1 onClick={handleEscapeHatch} style={{ cursor: 'pointer', userSelect: 'none' }}>
-          Scramble <span className="version">v1.18.1</span>
+          Scramble <span className="version">v1.19.0</span>
         </h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
