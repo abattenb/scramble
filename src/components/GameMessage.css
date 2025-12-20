@@ -1,0 +1,75 @@
+.game-message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 20px 40px;
+  border-radius: 12px;
+  font-weight: bold;
+  font-size: 20px;
+  text-align: center;
+  animation: gameMessageAnimation 2.5s ease forwards;
+  white-space: nowrap;
+  z-index: 100;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.6),
+    0 0 20px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+@keyframes gameMessageAnimation {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  10% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  20% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+}
+
+.game-message-error {
+  background: rgba(244, 67, 54, 0.98);
+  border: 3px solid #f44336;
+  color: #fff;
+}
+
+.game-message-success {
+  background: rgba(76, 175, 80, 0.98);
+  border: 3px solid #4caf50;
+  color: #fff;
+}
+
+.game-message-info {
+  background: rgba(255, 152, 0, 0.98);
+  border: 3px solid #ff9800;
+  color: #fff;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 1090px) {
+  .game-message {
+    font-size: 18px;
+    padding: 16px 32px;
+  }
+}
+
+@media (max-width: 675px) {
+  .game-message {
+    font-size: 14px;
+    padding: 12px 24px;
+    max-width: 80%;
+    white-space: normal;
+  }
+}

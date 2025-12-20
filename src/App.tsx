@@ -6,8 +6,16 @@ import { loadDictionary } from './data/dictionary';
 import { findWordsFromPlacement } from './data/scoring';
 import { GameBoard } from './components/GameBoard';
 import { PlayerRack } from './components/PlayerRack';
+import { GameMessage } from './components/GameMessage';
 import { VERSION } from './version';
 import './App.css';
+
+// Extend Window interface for service worker
+declare global {
+  interface Window {
+    updateServiceWorker?: () => void;
+  }
+}
 
 const STORAGE_KEY = 'scramble-game-state';
 const PLAYER_NAMES_KEY = 'scramble-player-names';
@@ -213,7 +221,8 @@ function App() {
   const [dragOverCell, setDragOverCell] = useState<{ row: number; col: number } | null>(null);
   const [dictionaryLoaded, setDictionaryLoaded] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'error' | 'success' | 'info' } | null>(null);
-  
+  const [gameMessage, setGameMessage] = useState<{ text: string; type: 'error' | 'success' | 'info' } | null>(null);
+
   // Exchange tiles state
   const [exchangeMode, setExchangeMode] = useState(false);
   const [selectedForExchange, setSelectedForExchange] = useState<Set<string>>(new Set());
@@ -243,6 +252,16 @@ function App() {
       return () => clearTimeout(timer);
     }
   }, [message]);
+
+  // Auto-dismiss game message after 2.5 seconds (matches animation duration)
+  useEffect(() => {
+    if (gameMessage) {
+      const timer = setTimeout(() => {
+        setGameMessage(null);
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [gameMessage]);
 
   // Cleanup escape hatch timeout on unmount
   useEffect(() => {
@@ -601,7 +620,7 @@ function App() {
       
       // Expert mode: end turn on invalid word (but not placement errors)
       if (expertMode && isInvalidWordError) {
-        setMessage({ text: `${errorMessage} - Turn lost!`, type: 'error' });
+        setGameMessage({ text: `${errorMessage} - Turn lost!`, type: 'error' });
 
         // Return tiles to rack and switch turns
         setGameState((prev) => {
@@ -640,8 +659,8 @@ function App() {
         });
         return;
       }
-      
-      setMessage({ text: errorMessage, type: 'error' });
+
+      setGameMessage({ text: errorMessage, type: 'error' });
       return;
     }
 
@@ -708,9 +727,9 @@ function App() {
     });
 
     const wordsPlayed = result.words.map((w) => w.word.toUpperCase()).join(', ');
-    setMessage({ 
-      text: `+${result.totalScore} points! Words: ${wordsPlayed}`, 
-      type: 'success' 
+    setGameMessage({
+      text: `+${result.totalScore} points! Words: ${wordsPlayed}`,
+      type: 'success'
     });
   }, [dictionaryLoaded, gameState.placedThisTurn, gameState.board, gameState.isFirstMove, expertMode]);
 
@@ -727,7 +746,7 @@ function App() {
         turnNumber: prev.turnNumber + 1,
       };
     });
-    setMessage({ text: 'Turn passed', type: 'info' });
+    setGameMessage({ text: 'Turn passed', type: 'info' });
   }, [handleRecallTiles]);
 
   // Exchange tiles handlers
@@ -795,7 +814,7 @@ function App() {
 
     setExchangeMode(false);
     setSelectedForExchange(new Set());
-    setMessage({ text: `Exchanged ${selectedForExchange.size} tile(s)`, type: 'info' });
+    setGameMessage({ text: `Exchanged ${selectedForExchange.size} tile(s)`, type: 'info' });
   }, [selectedForExchange, gameState.tileBag.length]);
 
   const handleStartGame = useCallback(() => {
@@ -1126,8 +1145,8 @@ function App() {
         <div className="update-notification">
           <span>New version available!</span>
           <button onClick={() => {
-            if (typeof (window as any).updateServiceWorker === 'function') {
-              (window as any).updateServiceWorker();
+            if (typeof window.updateServiceWorker === 'function') {
+              window.updateServiceWorker();
             } else {
               window.location.reload();
             }
@@ -1163,19 +1182,24 @@ function App() {
               </div>
             )}
 
-            <GameBoard
-              board={gameState.board}
-              onDropTile={handleDropTile}
-              dragOverCell={dragOverCell}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onTileDragStart={handleBoardTileDragStart}
-              onTileDragEnd={handleDragEnd}
-              onTileTouchStart={handleBoardTileTouchStart}
-              draggingTileId={draggingTile?.id ?? null}
-              showPlayerColorOnTiles={showPlayerColorOnTiles}
-              players={gameState.players}
-            />
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              <GameBoard
+                board={gameState.board}
+                onDropTile={handleDropTile}
+                dragOverCell={dragOverCell}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onTileDragStart={handleBoardTileDragStart}
+                onTileDragEnd={handleDragEnd}
+                onTileTouchStart={handleBoardTileTouchStart}
+                draggingTileId={draggingTile?.id ?? null}
+                showPlayerColorOnTiles={showPlayerColorOnTiles}
+                players={gameState.players}
+              />
+              {gameMessage && (
+                <GameMessage text={gameMessage.text} type={gameMessage.type} />
+              )}
+            </div>
 
             {/* Recalling tiles animation */}
             {recallingTiles.map((recalling, index) => {
