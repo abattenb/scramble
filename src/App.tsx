@@ -734,20 +734,75 @@ function App() {
   }, [dictionaryLoaded, gameState.placedThisTurn, gameState.board, gameState.isFirstMove, expertMode]);
 
   const handlePass = useCallback(() => {
-    // Return any placed tiles
-    handleRecallTiles();
-    // Switch turns
-    setGameState((prev) => {
-      const nextPlayerIndex = prev.currentPlayerIndex === 0 ? 1 : 0;
-      setRackRevealState({ activeRack: prev.currentPlayerIndex, readyPending: true });
-      return {
-        ...prev,
-        currentPlayerIndex: nextPlayerIndex,
-        turnNumber: prev.turnNumber + 1,
-      };
-    });
+    // Return any placed tiles if there are any
+    if (gameState.placedThisTurn.length > 0) {
+      // Calculate target positions in the rack
+      const currentRackLength = gameState.players[gameState.currentPlayerIndex].rack.length;
+      const currentPlayerBeforeSwitch = gameState.currentPlayerIndex;
+
+      // Start animation by setting recalling tiles with target positions
+      const tilesToRecall = gameState.placedThisTurn.map((placed, index) => ({
+        tile: placed.tile,
+        row: placed.row,
+        col: placed.col,
+        targetIndex: currentRackLength + index
+      }));
+
+      setRecallingTiles(tilesToRecall);
+
+      // After animation completes, update game state and switch turns
+      setTimeout(() => {
+        setGameState((prev) => {
+          const newBoard = prev.board.map((r) => r.map((c) => ({ ...c })));
+          const tilesReturned: Tile[] = [];
+
+          // Remove placed tiles from board
+          for (const placed of prev.placedThisTurn) {
+            newBoard[placed.row][placed.col] = {
+              ...newBoard[placed.row][placed.col],
+              tile: null,
+              isNewlyPlaced: false,
+            };
+            tilesReturned.push(placed.tile);
+          }
+
+          // Return tiles to the ORIGINAL player's rack (before turn switch)
+          const newPlayers = [...prev.players] as [Player, Player];
+          newPlayers[currentPlayerBeforeSwitch] = {
+            ...newPlayers[currentPlayerBeforeSwitch],
+            rack: [...newPlayers[currentPlayerBeforeSwitch].rack, ...tilesReturned],
+          };
+
+          // Switch to next player
+          const nextPlayerIndex = currentPlayerBeforeSwitch === 0 ? 1 : 0;
+          setRackRevealState({ activeRack: currentPlayerBeforeSwitch, readyPending: true });
+
+          return {
+            ...prev,
+            board: newBoard,
+            players: newPlayers,
+            placedThisTurn: [],
+            currentPlayerIndex: nextPlayerIndex,
+            turnNumber: prev.turnNumber + 1,
+          };
+        });
+        setRecallingTiles([]);
+        setMessage(null);
+      }, 600);
+    } else {
+      // No tiles to recall, just switch turns
+      setGameState((prev) => {
+        const nextPlayerIndex = prev.currentPlayerIndex === 0 ? 1 : 0;
+        setRackRevealState({ activeRack: prev.currentPlayerIndex, readyPending: true });
+        return {
+          ...prev,
+          currentPlayerIndex: nextPlayerIndex,
+          turnNumber: prev.turnNumber + 1,
+        };
+      });
+    }
     setGameMessage({ text: 'Turn passed', type: 'info' });
-  }, [handleRecallTiles]);
+  }, [gameState.placedThisTurn, gameState.players, gameState.currentPlayerIndex]);
 
   // Exchange tiles handlers
   const handleToggleExchangeMode = useCallback(() => {
