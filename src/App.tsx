@@ -15,6 +15,7 @@ const GAME_SETTINGS_KEY = 'scramble-game-settings';
 interface GameSettings {
   expertMode: boolean;
   hidePlayerTiles: boolean;
+  randomizePlayer1: boolean;
 }
 
 function saveGameSettings(settings: GameSettings): void {
@@ -26,7 +27,7 @@ function saveGameSettings(settings: GameSettings): void {
 }
 
 function loadGameSettings(): GameSettings {
-  const defaults: GameSettings = { expertMode: false, hidePlayerTiles: false };
+  const defaults: GameSettings = { expertMode: false, hidePlayerTiles: false, randomizePlayer1: false };
   try {
     const saved = localStorage.getItem(GAME_SETTINGS_KEY);
     if (saved) {
@@ -152,6 +153,8 @@ function App() {
   // Game settings
   const [expertMode, setExpertMode] = useState<boolean>(() => loadGameSettings().expertMode);
   const [hidePlayerTiles, setHidePlayerTiles] = useState<boolean>(() => loadGameSettings().hidePlayerTiles);
+  const [randomizePlayer1, setRandomizePlayer1] = useState<boolean>(() => loadGameSettings().randomizePlayer1);
+  const [showAdditionalOptions, setShowAdditionalOptions] = useState(false);
   const [draggingTile, setDraggingTile] = useState<Tile | null>(null);
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
   const [dragOverCell, setDragOverCell] = useState<{ row: number; col: number } | null>(null);
@@ -739,10 +742,16 @@ function App() {
 
   const handleStartGame = useCallback(() => {
     // Save player names and settings for future sessions
-    const name1 = player1Name.trim() || 'Player 1';
-    const name2 = player2Name.trim() || 'Player 2';
+    let name1 = player1Name.trim() || 'Player 1';
+    let name2 = player2Name.trim() || 'Player 2';
+
+    // Randomize player order if enabled
+    if (randomizePlayer1 && Math.random() < 0.5) {
+      [name1, name2] = [name2, name1];
+    }
+
     savePlayerNames({ player1: name1, player2: name2 });
-    saveGameSettings({ expertMode, hidePlayerTiles });
+    saveGameSettings({ expertMode, hidePlayerTiles, randomizePlayer1 });
 
     clearGameState();
     const newGame = initializeGame(name1, name2);
@@ -755,6 +764,7 @@ function App() {
     setExchangeMode(false);
     setSelectedForExchange(new Set());
     setMessage(null);
+    setShowAdditionalOptions(false);
 
     // If hidePlayerTiles is enabled, require first player to click "Player ready"
     if (hidePlayerTiles) {
@@ -762,11 +772,12 @@ function App() {
     } else {
       setRackRevealState({ activeRack: 0, readyPending: false });
     }
-  }, [player1Name, player2Name, expertMode, hidePlayerTiles]);
+  }, [player1Name, player2Name, expertMode, hidePlayerTiles, randomizePlayer1]);
 
   const handleNewGame = useCallback(() => {
     // Show start modal when clicking New Game
     setGamePhase('start');
+    setShowAdditionalOptions(false);
   }, []);
 
   const handleCloseModal = useCallback(() => {
@@ -822,61 +833,98 @@ function App() {
                 <span className="material-icons">close</span>
               </button>
             )}
-            <h2>Scramble!</h2>
-            <p>A word game for 2 players</p>
-            <div className="player-name-inputs">
-              <div className="player-name-field">
-                <label htmlFor="player1-name">Player 1</label>
-                <input
-                  id="player1-name"
-                  type="text"
-                  value={player1Name}
-                  onChange={(e) => setPlayer1Name(e.target.value)}
-                  placeholder="Player 1"
-                  maxLength={20}
-                />
-              </div>
-              <div className="player-name-field">
-                <label htmlFor="player2-name">Player 2</label>
-                <input
-                  id="player2-name"
-                  type="text"
-                  value={player2Name}
-                  onChange={(e) => setPlayer2Name(e.target.value)}
-                  placeholder="Player 2"
-                  maxLength={20}
-                />
-              </div>
-            </div>
-            <div className="game-settings">
-              <label className="toggle-setting">
-                <input
-                  type="checkbox"
-                  checked={expertMode}
-                  onChange={(e) => setExpertMode(e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-                <span className="toggle-label">
-                  Expert Mode
-                  <span className="toggle-subtext">Playing a wrong word ends turn</span>
-                </span>
-              </label>
-              <label className="toggle-setting">
-                <input
-                  type="checkbox"
-                  checked={hidePlayerTiles}
-                  onChange={(e) => setHidePlayerTiles(e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-                <span className="toggle-label">
-                  Hide Player Tiles
-                  <span className="toggle-subtext">Show ready prompt between turns</span>
-                </span>
-              </label>
-            </div>
-            <button onClick={handleStartGame} className="start-game-btn">
-              Start Game
-            </button>
+
+            {!showAdditionalOptions ? (
+              <>
+                <h2>Scramble!</h2>
+                <p>A word game for 2 players</p>
+                <div className="player-name-inputs">
+                  <div className="player-name-field">
+                    <label htmlFor="player1-name">Player 1</label>
+                    <input
+                      id="player1-name"
+                      type="text"
+                      value={player1Name}
+                      onChange={(e) => setPlayer1Name(e.target.value)}
+                      placeholder="Player 1"
+                      maxLength={20}
+                    />
+                  </div>
+                  <div className="player-name-field">
+                    <label htmlFor="player2-name">Player 2</label>
+                    <input
+                      id="player2-name"
+                      type="text"
+                      value={player2Name}
+                      onChange={(e) => setPlayer2Name(e.target.value)}
+                      placeholder="Player 2"
+                      maxLength={20}
+                    />
+                  </div>
+                </div>
+                <div className="game-settings">
+                  <label className="toggle-setting">
+                    <input
+                      type="checkbox"
+                      checked={expertMode}
+                      onChange={(e) => setExpertMode(e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                    <span className="toggle-label">
+                      Expert Mode
+                      <span className="toggle-subtext">Playing a wrong word ends turn</span>
+                    </span>
+                  </label>
+                  <label className="toggle-setting">
+                    <input
+                      type="checkbox"
+                      checked={hidePlayerTiles}
+                      onChange={(e) => setHidePlayerTiles(e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                    <span className="toggle-label">
+                      Hide Player Tiles
+                      <span className="toggle-subtext">Show ready prompt between turns</span>
+                    </span>
+                  </label>
+                </div>
+                <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+                  <button onClick={() => setShowAdditionalOptions(true)} className="start-game-btn" style={{ background: 'linear-gradient(180deg, #607d8b 0%, #455a64 100%)', flex: 1 }}>
+                    Options
+                  </button>
+                  <button onClick={handleStartGame} className="start-game-btn" style={{ flex: 1 }}>
+                    Start Game
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2>More Options</h2>
+                <p>Configure advanced game settings</p>
+                <div className="game-settings">
+                  <label className="toggle-setting">
+                    <input
+                      type="checkbox"
+                      checked={randomizePlayer1}
+                      onChange={(e) => setRandomizePlayer1(e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                    <span className="toggle-label">
+                      Randomize Player 1
+                      <span className="toggle-subtext">Randomly choose who goes first</span>
+                    </span>
+                  </label>
+                </div>
+                <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+                  <button onClick={() => setShowAdditionalOptions(false)} className="start-game-btn" style={{ background: 'linear-gradient(180deg, #9e9e9e 0%, #757575 100%)', flex: 1 }}>
+                    Back
+                  </button>
+                  <button onClick={handleStartGame} className="start-game-btn" style={{ flex: 1 }}>
+                    Start Game
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -901,7 +949,7 @@ function App() {
 
       <header className="header">
         <h1 onClick={handleEscapeHatch} style={{ cursor: 'pointer', userSelect: 'none' }}>
-          Scramble <span className="version">v1.19.0</span>
+          Scramble <span className="version">v1.20.2</span>
         </h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
