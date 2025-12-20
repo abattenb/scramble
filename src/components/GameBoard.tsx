@@ -1,4 +1,4 @@
-import type { BoardCell, Tile } from '../types';
+import type { BoardCell, Tile, Player } from '../types';
 import { TileComponent } from './Tile';
 import './GameBoard.css';
 
@@ -12,6 +12,8 @@ interface GameBoardProps {
   onTileDragEnd?: () => void;
   onTileTouchStart?: (e: React.TouchEvent, tile: Tile, row: number, col: number) => void;
   draggingTileId?: string | null;
+  showPlayerColorOnTiles?: boolean;
+  players?: [Player, Player];
 }
 
 function getBonusLabel(bonus: BoardCell['bonus']): string {
@@ -25,17 +27,50 @@ function getBonusLabel(bonus: BoardCell['bonus']): string {
   }
 }
 
-export function GameBoard({ 
-  board, 
-  onDropTile, 
-  dragOverCell, 
-  onDragOver, 
+export function GameBoard({
+  board,
+  onDropTile,
+  dragOverCell,
+  onDragOver,
   onDragLeave,
   onTileDragStart,
   onTileDragEnd,
   onTileTouchStart,
   draggingTileId,
+  showPlayerColorOnTiles = false,
+  players,
 }: GameBoardProps) {
+  // Helper to get player color by player index
+  const getPlayerColorByIndex = (playerIndex: number | undefined): string | undefined => {
+    if (!showPlayerColorOnTiles || playerIndex === undefined || !players) {
+      return undefined;
+    }
+    // Load player settings to get colors
+    const PLAYER_COLORS = [
+      '#ffd700', // Gold
+      '#4caf50', // Green
+      '#2196f3', // Blue
+      '#f44336', // Red
+      '#ba68c8', // Purple
+      '#ff9800', // Orange
+    ];
+    try {
+      const saved = localStorage.getItem('scramble-player-names');
+      if (saved) {
+        const settings = JSON.parse(saved);
+        const player = players[playerIndex];
+        if (player.name === settings.player1.name) {
+          return settings.player1.color;
+        }
+        if (player.name === settings.player2.name) {
+          return settings.player2.color;
+        }
+      }
+    } catch (error) {
+      // Fallback to default colors
+    }
+    return PLAYER_COLORS[playerIndex] || undefined;
+  };
   return (
     <div className="game-board">
       {board.map((row, rowIndex) => (
@@ -67,6 +102,7 @@ export function GameBoard({
                       onDragStart={cell.isNewlyPlaced ? (e, tile) => onTileDragStart?.(e, tile, rowIndex, colIndex) : undefined}
                       onDragEnd={cell.isNewlyPlaced ? onTileDragEnd : undefined}
                       onTouchStart={cell.isNewlyPlaced ? (e, tile) => onTileTouchStart?.(e, tile, rowIndex, colIndex) : undefined}
+                      playerColor={getPlayerColorByIndex(cell.placedByPlayer)}
                     />
                   ) : (
                     <span className="bonus-label">{getBonusLabel(cell.bonus)}</span>

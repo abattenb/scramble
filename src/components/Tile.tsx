@@ -9,9 +9,15 @@ interface TileProps {
   onDragEnd?: (e: React.DragEvent) => void;
   onClick?: (tile: Tile) => void;
   onTouchStart?: (e: React.TouchEvent, tile: Tile) => void;
+  playerColor?: string;
 }
 
-export function TileComponent({ tile, isDragging, isSelected, onDragStart, onDragEnd, onClick, onTouchStart }: TileProps) {
+export function TileComponent({ tile, isDragging, isSelected, onDragStart, onDragEnd, onClick, onTouchStart, playerColor }: TileProps) {
+  // Build custom style for player-colored letter
+  const letterStyle: React.CSSProperties = playerColor
+    ? { color: playerColor }
+    : {};
+
   return (
     <div
       className={`tile ${isDragging ? 'dragging' : ''} ${tile.isBlank ? 'blank' : ''} ${isSelected ? 'selected' : ''}`}
@@ -21,7 +27,7 @@ export function TileComponent({ tile, isDragging, isSelected, onDragStart, onDra
       onClick={() => onClick?.(tile)}
       onTouchStart={(e) => onTouchStart?.(e, tile)}
     >
-      <span className="tile-letter">{tile.isBlank ? '?' : tile.letter}</span>
+      <span className="tile-letter" style={letterStyle}>{tile.isBlank ? '?' : tile.letter}</span>
       <span className="tile-points">{tile.letter === '' ? '' : tile.points}</span>
     </div>
   );

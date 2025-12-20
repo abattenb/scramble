@@ -21,6 +21,7 @@ interface GameSettings {
   expertMode: boolean;
   hidePlayerTiles: boolean;
   randomizePlayer1: boolean;
+  showPlayerColorOnTiles: boolean;
 }
 
 // Available player colors
@@ -42,7 +43,7 @@ function saveGameSettings(settings: GameSettings): void {
 }
 
 function loadGameSettings(): GameSettings {
-  const defaults: GameSettings = { expertMode: false, hidePlayerTiles: false, randomizePlayer1: false };
+  const defaults: GameSettings = { expertMode: false, hidePlayerTiles: false, randomizePlayer1: false, showPlayerColorOnTiles: false };
   try {
     const saved = localStorage.getItem(GAME_SETTINGS_KEY);
     if (saved) {
@@ -204,6 +205,7 @@ function App() {
   const [expertMode, setExpertMode] = useState<boolean>(() => loadGameSettings().expertMode);
   const [hidePlayerTiles, setHidePlayerTiles] = useState<boolean>(() => loadGameSettings().hidePlayerTiles);
   const [randomizePlayer1, setRandomizePlayer1] = useState<boolean>(() => loadGameSettings().randomizePlayer1);
+  const [showPlayerColorOnTiles, setShowPlayerColorOnTiles] = useState<boolean>(() => loadGameSettings().showPlayerColorOnTiles);
   const [showAdditionalOptions, setShowAdditionalOptions] = useState(false);
   const [draggingTile, setDraggingTile] = useState<Tile | null>(null);
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
@@ -644,9 +646,14 @@ function App() {
 
     // Valid play! Update score and switch turns
     setGameState((prev) => {
-      // Clear newly placed flags
-      const newBoard = prev.board.map((r) => 
-        r.map((c) => ({ ...c, isNewlyPlaced: false }))
+      // Clear newly placed flags and mark tiles with player ID
+      const newBoard = prev.board.map((r) =>
+        r.map((c) => ({
+          ...c,
+          isNewlyPlaced: false,
+          // Mark tiles that were just placed with the current player's ID
+          placedByPlayer: c.isNewlyPlaced ? prev.currentPlayerIndex : c.placedByPlayer
+        }))
       );
 
       // Update score
@@ -807,7 +814,7 @@ function App() {
       player1: { name: name1, color: color1 },
       player2: { name: name2, color: color2 }
     });
-    saveGameSettings({ expertMode, hidePlayerTiles, randomizePlayer1 });
+    saveGameSettings({ expertMode, hidePlayerTiles, randomizePlayer1, showPlayerColorOnTiles });
 
     clearGameState();
     const newGame = initializeGame(name1, name2);
@@ -829,7 +836,7 @@ function App() {
     } else {
       setRackRevealState({ activeRack: 0, readyPending: false });
     }
-  }, [player1Name, player2Name, player1Color, player2Color, expertMode, hidePlayerTiles, randomizePlayer1]);
+  }, [player1Name, player2Name, player1Color, player2Color, expertMode, hidePlayerTiles, randomizePlayer1, showPlayerColorOnTiles]);
 
   const handleNewGame = useCallback(() => {
     // Show start modal when clicking New Game
@@ -1081,6 +1088,18 @@ function App() {
                       <span className="toggle-subtext">Randomly choose who goes first</span>
                     </span>
                   </label>
+                  <label className="toggle-setting">
+                    <input
+                      type="checkbox"
+                      checked={showPlayerColorOnTiles}
+                      onChange={(e) => setShowPlayerColorOnTiles(e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                    <span className="toggle-label">
+                      Show player color on tiles
+                      <span className="toggle-subtext">Color tiles after successful word</span>
+                    </span>
+                  </label>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
                   <button onClick={() => setShowAdditionalOptions(false)} className="start-game-btn" style={{ background: 'linear-gradient(180deg, #9e9e9e 0%, #757575 100%)', flex: 1 }}>
@@ -1116,7 +1135,7 @@ function App() {
 
       <header className="header">
         <h1 onClick={handleEscapeHatch} style={{ cursor: 'pointer', userSelect: 'none' }}>
-          Scramble <span className="version">v1.21.0</span>
+          Scramble <span className="version">v1.22.0</span>
         </h1>
         <div className="game-info">
           <button onClick={handleNewGame} className="new-game-btn">
@@ -1147,6 +1166,8 @@ function App() {
               onTileDragEnd={handleDragEnd}
               onTileTouchStart={handleBoardTileTouchStart}
               draggingTileId={draggingTile?.id ?? null}
+              showPlayerColorOnTiles={showPlayerColorOnTiles}
+              players={gameState.players}
             />
 
             {/* Recalling tiles animation */}

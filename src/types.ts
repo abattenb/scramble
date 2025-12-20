@@ -18,6 +18,7 @@ export interface BoardCell {
   tile: Tile | null;
   bonus: BonusType;
   isNewlyPlaced?: boolean;
+  placedByPlayer?: number;
 }
 
 export type BonusType = 
