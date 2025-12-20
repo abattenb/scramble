@@ -1005,6 +1005,7 @@ function App() {
                           placeholder="Player 1"
                           maxLength={20}
                           style={{ flex: 1 }}
+                          data-testid="player1-name-input"
                         />
                       </div>
                       {showColorPicker === 1 && (
@@ -1071,6 +1072,7 @@ function App() {
                           placeholder="Player 2"
                           maxLength={20}
                           style={{ flex: 1 }}
+                          data-testid="player2-name-input"
                         />
                       </div>
                       {showColorPicker === 2 && (
@@ -1117,6 +1119,7 @@ function App() {
                       type="checkbox"
                       checked={expertMode}
                       onChange={(e) => setExpertMode(e.target.checked)}
+                      data-testid="expert-mode-toggle"
                     />
                     <span className="toggle-slider"></span>
                     <span className="toggle-label">
@@ -1129,6 +1132,7 @@ function App() {
                       type="checkbox"
                       checked={hidePlayerTiles}
                       onChange={(e) => setHidePlayerTiles(e.target.checked)}
+                      data-testid="hide-player-tiles-toggle"
                     />
                     <span className="toggle-slider"></span>
                     <span className="toggle-label">
@@ -1138,10 +1142,10 @@ function App() {
                   </label>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-                  <button onClick={() => setShowAdditionalOptions(true)} className="start-game-btn" style={{ background: 'linear-gradient(180deg, #607d8b 0%, #455a64 100%)', flex: 1 }}>
+                  <button onClick={() => setShowAdditionalOptions(true)} className="start-game-btn" style={{ background: 'linear-gradient(180deg, #607d8b 0%, #455a64 100%)', flex: 1 }} data-testid="options-btn">
                     Options
                   </button>
-                  <button onClick={handleStartGame} className="start-game-btn" style={{ flex: 1 }}>
+                  <button onClick={handleStartGame} className="start-game-btn" style={{ flex: 1 }} data-testid="start-game-btn">
                     Start Game
                   </button>
                 </div>
@@ -1219,7 +1223,7 @@ function App() {
           Scramble <span className="version">v{VERSION}</span>
         </h1>
         <div className="game-info">
-          <button onClick={handleNewGame} className="new-game-btn">
+          <button onClick={handleNewGame} className="new-game-btn" data-testid="new-game-btn">
             New Game
           </button>
         </div>
@@ -1314,20 +1318,23 @@ function App() {
                 onClick={handlePass}
                 disabled={gameState.gameOver || (hidePlayerTiles && rackRevealState.readyPending)}
                 className="control-btn pass-btn"
+                data-testid="pass-btn"
               >
                 Pass Turn
               </button>
-              <button 
-                onClick={handleRecallTiles} 
+              <button
+                onClick={handleRecallTiles}
                 disabled={gameState.placedThisTurn.length === 0 || gameState.gameOver}
                 className="control-btn recall-btn"
+                data-testid="recall-btn"
               >
                 Recall Tiles
               </button>
-              <button 
-                onClick={handleSubmitWord} 
+              <button
+                onClick={handleSubmitWord}
                 disabled={gameState.placedThisTurn.length === 0 || gameState.gameOver}
                 className="control-btn submit-btn"
+                data-testid="submit-btn"
               >
                 Submit Word
               </button>
