@@ -38,8 +38,10 @@ interface PlayerSettings {
   color: string;
 }
 
+type GameMode = 'standard' | 'expert' | 'freeplay' | 'tournament';
+
 interface GameSettings {
-  expertMode: boolean;
+  gameMode: GameMode;
   hidePlayerTiles: boolean;
   randomizePlayer1: boolean;
   showPlayerColorOnTiles: boolean;
@@ -64,11 +66,16 @@ function saveGameSettings(settings: GameSettings): void {
 }
 
 function loadGameSettings(): GameSettings {
-  const defaults: GameSettings = { expertMode: false, hidePlayerTiles: false, randomizePlayer1: false, showPlayerColorOnTiles: false };
+  const defaults: GameSettings = { gameMode: 'standard', hidePlayerTiles: false, randomizePlayer1: false, showPlayerColorOnTiles: false };
   try {
     const saved = localStorage.getItem(GAME_SETTINGS_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
+      // Migrate from old expertMode boolean to new gameMode
+      if ('expertMode' in parsed && !('gameMode' in parsed)) {
+        parsed.gameMode = parsed.expertMode ? 'expert' : 'standard';
+        delete parsed.expertMode;
+      }
       // Merge with defaults to ensure all properties are defined
       return { ...defaults, ...parsed };
     }
@@ -223,7 +230,7 @@ function App() {
   const [player2Color, setPlayer2Color] = useState<string>(() => loadPlayerSettings().player2.color);
   const [showColorPicker, setShowColorPicker] = useState<1 | 2 | null>(null);
   // Game settings
-  const [expertMode, setExpertMode] = useState<boolean>(() => loadGameSettings().expertMode);
+  const [gameMode, setGameMode] = useState<GameMode>(() => loadGameSettings().gameMode);
   const [hidePlayerTiles, setHidePlayerTiles] = useState<boolean>(() => loadGameSettings().hidePlayerTiles);
   const [randomizePlayer1, setRandomizePlayer1] = useState<boolean>(() => loadGameSettings().randomizePlayer1);
   const [showPlayerColorOnTiles, setShowPlayerColorOnTiles] = useState<boolean>(() => loadGameSettings().showPlayerColorOnTiles);
@@ -715,7 +722,8 @@ function App() {
   }, [gameState.placedThisTurn, gameState.players, gameState.currentPlayerIndex]);
 
   const handleSubmitWord = useCallback(() => {
-    if (!dictionaryLoaded) {
+    // Free play mode: skip dictionary validation entirely
+    if (gameMode !== 'freeplay' && !dictionaryLoaded) {
       setMessage({ text: 'Dictionary is still loading...', type: 'info' });
       return;
     }
@@ -732,9 +740,75 @@ function App() {
     if (!result.isValid) {
       const errorMessage = result.errors[0] || 'Invalid placement';
       const isInvalidWordError = errorMessage.includes('Cannot form valid words');
-      
+
+      // Free play mode: skip word validation, only check placement rules
+      if (gameMode === 'freeplay' && isInvalidWordError) {
+        // Allow the play, just calculate basic score from tile values
+        const freePlayScore = gameState.placedThisTurn.reduce((sum, placed) => sum + placed.tile.points, 0);
+
+        // Process as valid play with free play score
+        setGameState((prev) => {
+          const newBoard = prev.board.map((r) =>
+            r.map((c) => ({
+              ...c,
+              isNewlyPlaced: false,
+              placedByPlayer: c.isNewlyPlaced ? prev.currentPlayerIndex : c.placedByPlayer
+            }))
+          );
+
+          const newPlayers = [...prev.players] as [Player, Player];
+          newPlayers[prev.currentPlayerIndex] = {
+            ...newPlayers[prev.currentPlayerIndex],
+            score: newPlayers[prev.currentPlayerIndex].score + freePlayScore,
+          };
+
+          const tilesToDraw = Math.min(prev.placedThisTurn.length, prev.tileBag.length);
+          const { drawn, remaining } = drawTiles(prev.tileBag, tilesToDraw);
+          newPlayers[prev.currentPlayerIndex] = {
+            ...newPlayers[prev.currentPlayerIndex],
+            rack: [...newPlayers[prev.currentPlayerIndex].rack, ...drawn],
+          };
+
+          const currentPlayerOutOfTiles = newPlayers[prev.currentPlayerIndex].rack.length === 0 && remaining.length === 0;
+          const isGameOver = currentPlayerOutOfTiles;
+
+          let winner: number | null = null;
+          if (isGameOver) {
+            winner = newPlayers[0].score >= newPlayers[1].score ? 0 : 1;
+          }
+
+          const nextPlayerIndex = prev.currentPlayerIndex === 0 ? 1 : 0;
+          setRackRevealState({ activeRack: prev.currentPlayerIndex, readyPending: true });
+          return {
+            ...prev,
+            board: newBoard,
+            players: newPlayers,
+            currentPlayerIndex: nextPlayerIndex,
+            tileBag: remaining,
+            turnNumber: prev.turnNumber + 1,
+            placedThisTurn: [],
+            isFirstMove: false,
+            gameOver: isGameOver,
+            winner,
+          };
+        });
+
+        setGameState(prev => {
+          if (prev.gameOver) {
+            setGamePhase('gameOver');
+          }
+          return prev;
+        });
+
+        setGameMessage({
+          text: `+${freePlayScore} points! (Free Play Mode)`,
+          type: 'success'
+        });
+        return;
+      }
+
       // Expert mode: end turn on invalid word (but not placement errors)
-      if (expertMode && isInvalidWordError) {
+      if (gameMode === 'expert' && isInvalidWordError) {
         setGameMessage({ text: `${errorMessage} - Turn lost!`, type: 'error' });
 
         // Return tiles to rack and switch turns
@@ -850,7 +924,7 @@ function App() {
       text: `+${result.totalScore} points! Words: ${wordsPlayed}`,
       type: 'success'
     });
-  }, [dictionaryLoaded, gameState.placedThisTurn, gameState.board, gameState.isFirstMove, expertMode]);
+  }, [dictionaryLoaded, gameState.placedThisTurn, gameState.board, gameState.isFirstMove, gameMode]);
 
   const handlePass = useCallback(() => {
     // Return any placed tiles if there are any
@@ -1012,7 +1086,7 @@ function App() {
       player1: { name: name1, color: color1 },
       player2: { name: name2, color: color2 }
     });
-    saveGameSettings({ expertMode, hidePlayerTiles, randomizePlayer1, showPlayerColorOnTiles });
+    saveGameSettings({ gameMode, hidePlayerTiles, randomizePlayer1, showPlayerColorOnTiles });
 
     clearGameState();
     const newGame = initializeGame(name1, name2);
@@ -1034,7 +1108,7 @@ function App() {
     } else {
       setRackRevealState({ activeRack: 0, readyPending: false });
     }
-  }, [player1Name, player2Name, player1Color, player2Color, expertMode, hidePlayerTiles, randomizePlayer1, showPlayerColorOnTiles]);
+  }, [player1Name, player2Name, player1Color, player2Color, gameMode, hidePlayerTiles, randomizePlayer1, showPlayerColorOnTiles]);
 
   const handleNewGame = useCallback(() => {
     // Show start modal when clicking New Game
@@ -1183,19 +1257,24 @@ function App() {
                   </div>
                 </div>
                 <div className="game-settings">
-                  <label className="toggle-setting">
-                    <input
-                      type="checkbox"
-                      checked={expertMode}
-                      onChange={(e) => setExpertMode(e.target.checked)}
-                      data-testid="expert-mode-toggle"
-                    />
-                    <span className="toggle-slider"></span>
-                    <span className="toggle-label">
-                      Expert Mode
-                      <span className="toggle-subtext">Playing a wrong word ends turn</span>
-                    </span>
-                  </label>
+                  <div className="setting-field">
+                    <label htmlFor="game-mode">
+                      Game Mode
+                      <span className="setting-subtext">Choose validation rules</span>
+                    </label>
+                    <select
+                      id="game-mode"
+                      value={gameMode}
+                      onChange={(e) => setGameMode(e.target.value as GameMode)}
+                      className="game-mode-select"
+                      data-testid="game-mode-select"
+                    >
+                      <option value="standard">Standard - Dictionary validated</option>
+                      <option value="expert">Expert - Wrong word loses turn</option>
+                      <option value="freeplay">Free Play - No dictionary checks</option>
+                      <option value="tournament" disabled>Tournament - Coming soon</option>
+                    </select>
+                  </div>
                   <label className="toggle-setting">
                     <input
                       type="checkbox"

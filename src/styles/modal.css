@@ -225,6 +225,60 @@
   gap: var(--space-xl);
 }
 
+/* Setting field for dropdowns */
+.setting-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.setting-field label {
+  font-size: var(--font-size-lg);
+  color: var(--color-tan);
+  font-weight: bold;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.setting-subtext {
+  font-size: var(--font-size-md);
+  font-weight: normal;
+  color: var(--color-gold-pale);
+}
+
+.game-mode-select {
+  padding: var(--space-lg) var(--space-xl);
+  font-size: var(--font-size-lg);
+  font-family: var(--font-primary);
+  border: 2px solid var(--color-brown);
+  border-radius: var(--radius-md);
+  background: var(--bg-input);
+  color: var(--color-tan);
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.game-mode-select:hover {
+  border-color: var(--color-gold-pale);
+}
+
+.game-mode-select:focus {
+  border-color: var(--color-gold);
+}
+
+.game-mode-select option {
+  background: var(--color-brown-dark);
+  color: var(--color-tan);
+  padding: var(--space-md);
+}
+
+.game-mode-select option:disabled {
+  color: var(--color-gray);
+  font-style: italic;
+}
+
 .toggle-setting {
   display: flex;
   align-items: center;
