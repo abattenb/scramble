@@ -1,0 +1,63 @@
+/* Messages (Toast Popup) Styles */
+
+.message {
+  position: fixed;
+  top: var(--space-xl);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--space-lg) var(--space-3xl);
+  border-radius: var(--radius-md);
+  font-weight: bold;
+  font-size: var(--font-size-base);
+  text-align: center;
+  animation: toastAnimation 5s ease forwards;
+  white-space: nowrap;
+  z-index: var(--z-toast);
+  box-shadow: var(--shadow-lg);
+}
+
+@keyframes toastAnimation {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-30px);
+  }
+  6% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  94% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-30px);
+  }
+}
+
+.message-error {
+  background: var(--bg-error-toast);
+  border: 2px solid var(--color-error);
+  color: var(--color-white);
+}
+
+.message-success {
+  background: var(--bg-success-toast);
+  border: 2px solid var(--color-success);
+  color: var(--color-white);
+}
+
+.message-info {
+  background: var(--bg-info-toast);
+  border: 2px solid var(--color-info);
+  color: var(--color-white);
+}
+
+/* Responsive Styles */
+@media (max-width: 675px) {
+  .message {
+    top: var(--space-lg);
+    font-size: var(--font-size-md);
+    padding: 10px var(--space-xl);
+  }
+}

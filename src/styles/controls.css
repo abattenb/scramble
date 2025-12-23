@@ -1,0 +1,77 @@
+/* Turn Controls Styles */
+
+.turn-controls {
+  display: flex;
+  gap: var(--space-lg);
+  margin: var(--space-md) 0;
+}
+
+.control-btn {
+  padding: var(--space-2xl) var(--space-5xl);
+  font-size: var(--font-size-lg);
+  font-weight: bold;
+  border: 2px solid;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.control-btn:disabled {
+  opacity: var(--opacity-medium);
+  cursor: not-allowed;
+}
+
+.recall-btn {
+  background: var(--bg-button-gray);
+  border-color: var(--color-gray-dark);
+  color: var(--color-white);
+}
+
+.recall-btn:hover:not(:disabled) {
+  background: var(--bg-button-gray-hover);
+}
+
+.submit-btn {
+  background: var(--bg-button-green);
+  border-color: var(--color-success-darker);
+  color: var(--color-white);
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: var(--bg-button-green-hover);
+  box-shadow: var(--shadow-button-green);
+}
+
+.pass-btn {
+  background: var(--bg-button-orange);
+  border-color: var(--color-warning-darker);
+  color: var(--color-white);
+}
+
+.pass-btn:hover:not(:disabled) {
+  background: var(--bg-button-orange-hover);
+}
+
+/* Responsive Styles */
+@media (max-width: 1090px) {
+  .turn-controls {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .control-btn {
+    padding: var(--space-xl) var(--space-4xl);
+    font-size: var(--font-size-lg);
+  }
+}
+
+@media (max-width: 675px) {
+  .turn-controls {
+    gap: var(--space-md);
+  }
+
+  .control-btn {
+    padding: var(--space-lg) var(--space-2xl);
+    font-size: var(--font-size-md);
+  }
+}

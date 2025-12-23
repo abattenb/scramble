@@ -1,0 +1,303 @@
+/* Sidebar Styles */
+
+.game-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xl);
+  padding: var(--space-2xl);
+  background: var(--bg-sidebar);
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--color-brown);
+  min-width: 140px;
+}
+
+/* Sidebar toggle - hidden by default, shown on mobile */
+.sidebar-toggle {
+  display: none;
+}
+
+.sidebar-content {
+  display: contents;
+}
+
+.tile-bag-info,
+.turn-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.game-sidebar h3 {
+  margin: 0 0 var(--space-md) 0;
+  font-size: var(--font-size-base);
+  color: var(--color-gold-pale);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.tile-count,
+.turn-number {
+  font-size: var(--font-size-7xl);
+  font-weight: bold;
+  color: var(--color-gold);
+  text-shadow: var(--shadow-sm);
+  line-height: 1;
+}
+
+.tile-label {
+  font-size: var(--font-size-md);
+  color: var(--color-gray);
+  margin-top: var(--space-sm);
+}
+
+.letter-distribution {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.letter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-sm);
+  width: 100%;
+}
+
+.letter-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--bg-letter-item);
+  border-radius: var(--radius-xs);
+  font-size: var(--font-size-md);
+}
+
+.letter-item.empty {
+  opacity: var(--opacity-low);
+  background: var(--bg-letter-item-empty);
+}
+
+.letter-item .letter {
+  font-weight: bold;
+  color: var(--color-gold);
+}
+
+.letter-item .count {
+  color: var(--color-gold-pale);
+  font-size: var(--font-size-sm);
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 1090px) {
+  .game-sidebar h3 {
+    margin: 0;
+    font-size: var(--font-size-md);
+  }
+
+  .tile-count,
+  .turn-number {
+    font-size: var(--font-size-3xl);
+  }
+
+  .tile-label {
+    display: none;
+  }
+
+  .letter-item {
+    padding: 1px 3px;
+    font-size: var(--font-size-xs);
+  }
+}
+
+@media (max-width: 840px) {
+  .game-layout {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+  }
+
+  .game-sidebar {
+    order: -1;
+    width: 100%;
+    max-width: 600px;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  /* Sidebar accordion */
+  .sidebar-toggle {
+    display: flex;
+    width: 100%;
+    padding: var(--space-lg) var(--space-xl);
+    background: transparent;
+    border: none;
+    color: var(--color-tan);
+    cursor: pointer;
+    font-size: var(--font-size-base);
+    font-weight: bold;
+  }
+
+  .sidebar-toggle-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .sidebar-toggle-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+  }
+
+  .sidebar-toggle-turn {
+    color: var(--color-gold-pale);
+    font-size: var(--font-size-md);
+  }
+
+  .sidebar-toggle .material-icons {
+    font-size: var(--font-size-2xl);
+    color: var(--color-gold);
+    transition: transform var(--transition-medium);
+  }
+
+  .game-sidebar.open .sidebar-toggle .material-icons {
+    transform: rotate(180deg);
+  }
+
+  .sidebar-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+    padding: 0 var(--space-xl);
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height var(--transition-medium), padding var(--transition-medium);
+  }
+
+  .game-sidebar.open .sidebar-content {
+    max-height: 500px;
+    padding: 0 var(--space-xl) var(--space-xl) var(--space-xl);
+  }
+
+  .game-sidebar.open .letter-distribution {
+    display: block;
+  }
+
+  .letter-distribution {
+    display: none;
+  }
+
+  /* Hide tile-bag-info and turn-info - info shown in toggle */
+  .tile-bag-info,
+  .turn-info {
+    display: none;
+  }
+
+  .letter-grid {
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--space-xs);
+  }
+
+  .letter-item {
+    padding: 1px 3px;
+    font-size: var(--font-size-xs);
+  }
+}
+
+@media (max-width: 675px) {
+  .game-sidebar {
+    order: -1;
+    width: 100%;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  /* Sidebar accordion on mobile */
+  .sidebar-toggle {
+    display: flex;
+    width: 100%;
+    padding: var(--space-lg) var(--space-xl);
+    background: transparent;
+    border: none;
+    color: var(--color-tan);
+    cursor: pointer;
+    font-size: var(--font-size-base);
+    font-weight: bold;
+  }
+
+  .sidebar-toggle-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .sidebar-toggle-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+  }
+
+  .sidebar-toggle-turn {
+    color: var(--color-gold-pale);
+    font-size: var(--font-size-md);
+  }
+
+  .sidebar-toggle .material-icons {
+    font-size: var(--font-size-2xl);
+    color: var(--color-gold);
+    transition: transform var(--transition-medium);
+  }
+
+  .game-sidebar.open .sidebar-toggle .material-icons {
+    transform: rotate(180deg);
+  }
+
+  .sidebar-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+    padding: 0 var(--space-xl);
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height var(--transition-medium), padding var(--transition-medium);
+  }
+
+  .game-sidebar.open .sidebar-content {
+    max-height: 500px;
+    padding: 0 var(--space-xl) var(--space-xl) var(--space-xl);
+  }
+
+  .game-sidebar.open .letter-distribution {
+    display: block;
+  }
+
+  .letter-distribution {
+    display: none;
+  }
+
+  .letter-grid {
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--space-xs);
+  }
+
+  .letter-item {
+    padding: 1px 3px;
+    font-size: var(--font-size-xs);
+  }
+
+  /* Hide tile-bag-info and turn-info on mobile - info shown in toggle */
+  .tile-bag-info,
+  .turn-info {
+    display: none;
+  }
+}

@@ -1,0 +1,64 @@
+/* Update Notification Styles */
+
+.update-notification {
+  position: fixed;
+  top: var(--space-xl);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-update-notification);
+  border: 2px solid var(--color-success);
+  color: var(--color-white);
+  padding: var(--space-lg) var(--space-2xl);
+  border-radius: var(--radius-md);
+  font-weight: bold;
+  font-size: var(--font-size-base);
+  z-index: var(--z-modal-content);
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  box-shadow: var(--shadow-md);
+  animation: slideDown var(--transition-medium) ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.update-btn {
+  padding: var(--space-sm) var(--space-xl);
+  background: var(--bg-white);
+  color: var(--color-success-darker);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: bold;
+  font-size: var(--font-size-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.update-btn:hover {
+  background: var(--bg-off-white);
+  transform: scale(1.05);
+}
+
+.update-dismiss {
+  background: transparent;
+  border: none;
+  color: var(--color-white);
+  font-size: var(--font-size-xl);
+  cursor: pointer;
+  padding: var(--space-sm) var(--space-md);
+  line-height: 1;
+  transition: transform var(--transition-fast);
+}
+
+.update-dismiss:hover {
+  transform: scale(1.2);
+}

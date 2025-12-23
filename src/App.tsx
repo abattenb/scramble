@@ -9,7 +9,18 @@ import { PlayerRack } from './components/PlayerRack';
 import { GameMessage } from './components/GameMessage';
 import { BlankLetterSelector } from './components/BlankLetterSelector';
 import { VERSION } from './version';
-import './App.css';
+import './styles/tokens.css';
+import './styles/utilities.css';
+import './styles/layout.css';
+import './styles/header.css';
+import './styles/sidebar.css';
+import './styles/score-card.css';
+import './styles/controls.css';
+import './styles/messages.css';
+import './styles/notifications.css';
+import './styles/modal.css';
+import './styles/animations.css';
+import './styles/player-rack-container.css';
 
 // Extend Window interface for service worker
 declare global {
@@ -1092,21 +1103,13 @@ function App() {
                 <div className="player-name-inputs">
                   <div className="player-name-field">
                     <label htmlFor="player1-name">Player 1</label>
-                    <div style={{ position: 'relative' }}>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div className="color-picker-container">
+                      <div className="color-picker-input-row">
                         <button
                           type="button"
                           onClick={() => setShowColorPicker(showColorPicker === 1 ? null : 1)}
-                          style={{
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '50%',
-                            border: '2px solid #8b4513',
-                            background: player1Color,
-                            cursor: 'pointer',
-                            flexShrink: 0,
-                            padding: 0
-                          }}
+                          className="color-picker-button"
+                          style={{ background: player1Color }}
                           aria-label="Choose color"
                         />
                         <input
@@ -1116,24 +1119,12 @@ function App() {
                           onChange={(e) => setPlayer1Name(e.target.value)}
                           placeholder="Player 1"
                           maxLength={20}
-                          style={{ flex: 1 }}
+                          className="flex-1"
                           data-testid="player1-name-input"
                         />
                       </div>
                       {showColorPicker === 1 && (
-                        <div style={{
-                          position: 'absolute',
-                          top: '40px',
-                          left: 0,
-                          background: 'rgba(44, 24, 16, 0.98)',
-                          border: '2px solid #8b4513',
-                          borderRadius: '8px',
-                          padding: '8px',
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(3, 1fr)',
-                          gap: '8px',
-                          zIndex: 1000
-                        }}>
+                        <div className="color-picker-dropdown">
                           {PLAYER_COLORS.map((color) => (
                             <button
                               key={color}
@@ -1142,15 +1133,8 @@ function App() {
                                 setPlayer1Color(color);
                                 setShowColorPicker(null);
                               }}
-                              style={{
-                                width: '36px',
-                                height: '36px',
-                                borderRadius: '50%',
-                                border: player1Color === color ? '3px solid #ffd700' : '2px solid #8b4513',
-                                background: color,
-                                cursor: 'pointer',
-                                padding: 0
-                              }}
+                              className={player1Color === color ? 'color-option-button selected' : 'color-option-button'}
+                              style={{ background: color }}
                             />
                           ))}
                         </div>
@@ -1159,21 +1143,13 @@ function App() {
                   </div>
                   <div className="player-name-field">
                     <label htmlFor="player2-name">Player 2</label>
-                    <div style={{ position: 'relative' }}>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div className="color-picker-container">
+                      <div className="color-picker-input-row">
                         <button
                           type="button"
                           onClick={() => setShowColorPicker(showColorPicker === 2 ? null : 2)}
-                          style={{
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '50%',
-                            border: '2px solid #8b4513',
-                            background: player2Color,
-                            cursor: 'pointer',
-                            flexShrink: 0,
-                            padding: 0
-                          }}
+                          className="color-picker-button"
+                          style={{ background: player2Color }}
                           aria-label="Choose color"
                         />
                         <input
@@ -1183,24 +1159,12 @@ function App() {
                           onChange={(e) => setPlayer2Name(e.target.value)}
                           placeholder="Player 2"
                           maxLength={20}
-                          style={{ flex: 1 }}
+                          className="flex-1"
                           data-testid="player2-name-input"
                         />
                       </div>
                       {showColorPicker === 2 && (
-                        <div style={{
-                          position: 'absolute',
-                          top: '40px',
-                          left: 0,
-                          background: 'rgba(44, 24, 16, 0.98)',
-                          border: '2px solid #8b4513',
-                          borderRadius: '8px',
-                          padding: '8px',
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(3, 1fr)',
-                          gap: '8px',
-                          zIndex: 1000
-                        }}>
+                        <div className="color-picker-dropdown">
                           {PLAYER_COLORS.map((color) => (
                             <button
                               key={color}
@@ -1209,15 +1173,8 @@ function App() {
                                 setPlayer2Color(color);
                                 setShowColorPicker(null);
                               }}
-                              style={{
-                                width: '36px',
-                                height: '36px',
-                                borderRadius: '50%',
-                                border: player2Color === color ? '3px solid #ffd700' : '2px solid #8b4513',
-                                background: color,
-                                cursor: 'pointer',
-                                padding: 0
-                              }}
+                              className={player2Color === color ? 'color-option-button selected' : 'color-option-button'}
+                              style={{ background: color }}
                             />
                           ))}
                         </div>
@@ -1253,11 +1210,11 @@ function App() {
                     </span>
                   </label>
                 </div>
-                <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-                  <button onClick={() => setShowAdditionalOptions(true)} className="start-game-btn" style={{ background: 'linear-gradient(180deg, #607d8b 0%, #455a64 100%)', flex: 1 }} data-testid="options-btn">
+                <div className="modal-button-group">
+                  <button onClick={() => setShowAdditionalOptions(true)} className="start-game-btn secondary flex-1" data-testid="options-btn">
                     Options
                   </button>
-                  <button onClick={handleStartGame} className="start-game-btn" style={{ flex: 1 }} data-testid="start-game-btn">
+                  <button onClick={handleStartGame} className="start-game-btn flex-1" data-testid="start-game-btn">
                     Start Game
                   </button>
                 </div>
@@ -1292,11 +1249,11 @@ function App() {
                     </span>
                   </label>
                 </div>
-                <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-                  <button onClick={() => setShowAdditionalOptions(false)} className="start-game-btn" style={{ background: 'linear-gradient(180deg, #9e9e9e 0%, #757575 100%)', flex: 1 }}>
+                <div className="modal-button-group">
+                  <button onClick={() => setShowAdditionalOptions(false)} className="start-game-btn tertiary flex-1">
                     Back
                   </button>
-                  <button onClick={handleStartGame} className="start-game-btn" style={{ flex: 1 }}>
+                  <button onClick={handleStartGame} className="start-game-btn flex-1">
                     Start Game
                   </button>
                 </div>
@@ -1353,7 +1310,7 @@ function App() {
               </div>
             )}
 
-            <div style={{ position: 'relative', display: 'inline-block' }}>
+            <div className="game-board-container">
               <GameBoard
                 board={gameState.board}
                 onDropTile={handleDropTile}
@@ -1562,42 +1519,10 @@ function App() {
                     onDropToRack={index === gameState.currentPlayerIndex ? handleDropToRack : undefined}
                   />
                   {showReadyButton && (
-                    <div className="ready-overlay" style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderRadius: 8,
-                      zIndex: 10,
-                      background: 'rgba(30, 30, 30, 0.85)'
-                    }}>
+                    <div className="ready-overlay">
                       <button
                         className="ready-btn"
-                        style={{
-                          fontSize: 32,
-                          padding: '32px 64px',
-                          borderRadius: 16,
-                          background: 'linear-gradient(180deg, #ffd700 0%, #daa520 100%)',
-                          color: '#2c1810',
-                          fontWeight: 'bold',
-                          border: '4px solid #8b4513',
-                          boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease'
-                        }}
                         onClick={() => setRackRevealState({ activeRack: index, readyPending: false })}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'scale(1.05)';
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.4)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'scale(1)';
-                          e.currentTarget.style.boxShadow = '0 4px 24px rgba(0,0,0,0.4)';
-                        }}
                       >
                         {player.name} ready!
                       </button>
