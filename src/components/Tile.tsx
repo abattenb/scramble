@@ -28,8 +28,10 @@ export function TileComponent({ tile, isDragging, isSelected, onDragStart, onDra
       onTouchStart={(e) => onTouchStart?.(e, tile)}
       data-testid={`tile-${tile.id}`}
     >
-      <span className="tile-letter" style={letterStyle}>{tile.isBlank ? '?' : tile.letter}</span>
-      <span className="tile-points">{tile.letter === '' ? '' : tile.points}</span>
+      <span className="tile-letter" style={letterStyle}>
+        {tile.isBlank && tile.letter === '' ? '?' : tile.letter}
+      </span>
+      {!tile.isBlank && <span className="tile-points">{tile.letter === '' ? '' : tile.points}</span>}
     </div>
   );
 }

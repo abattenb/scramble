@@ -7,6 +7,7 @@ import { findWordsFromPlacement } from './data/scoring';
 import { GameBoard } from './components/GameBoard';
 import { PlayerRack } from './components/PlayerRack';
 import { GameMessage } from './components/GameMessage';
+import { BlankLetterSelector } from './components/BlankLetterSelector';
 import { VERSION } from './version';
 import './App.css';
 
@@ -243,6 +244,14 @@ function App() {
   // Recalling tiles animation state
   const [recallingTiles, setRecallingTiles] = useState<Array<{ tile: Tile; row: number; col: number; targetIndex: number }>>([]);
 
+  // Blank tile letter selection state
+  const [blankSelection, setBlankSelection] = useState<{
+    tile: Tile;
+    row: number;
+    col: number;
+    fromBoard: boolean;
+  } | null>(null);
+
   // Auto-dismiss message after 5 seconds
   useEffect(() => {
     if (message) {
@@ -421,9 +430,9 @@ function App() {
 
   const handleDropTile = useCallback((row: number, col: number) => {
     if (!draggingTile) return;
-    
+
     // Check if cell is already occupied (and not the source cell)
-    if (gameState.board[row][col].tile && 
+    if (gameState.board[row][col].tile &&
         !(dragSourceCell && dragSourceCell.row === row && dragSourceCell.col === col)) {
       setDraggingTile(null);
       setDragOverCell(null);
@@ -439,9 +448,21 @@ function App() {
       return;
     }
 
+    // Check if this is a blank tile - if so, show letter selector
+    if (draggingTile.isBlank && draggingTile.letter === '') {
+      setBlankSelection({
+        tile: draggingTile,
+        row,
+        col,
+        fromBoard: !!dragSourceCell
+      });
+      // Don't clear dragging state yet - we'll do that after letter selection
+      return;
+    }
+
     setGameState((prev) => {
       const newBoard = prev.board.map((r) => r.map((c) => ({ ...c })));
-      
+
       // If dragging from board, clear the source cell
       if (dragSourceCell) {
         newBoard[dragSourceCell.row][dragSourceCell.col] = {
@@ -450,7 +471,7 @@ function App() {
           isNewlyPlaced: false,
         };
       }
-      
+
       newBoard[row][col] = {
         ...newBoard[row][col],
         tile: draggingTile,
@@ -501,14 +522,14 @@ function App() {
   // Handle dropping a tile back to the rack (only for tiles placed this turn)
   const handleDropToRack = useCallback(() => {
     if (!draggingTile || !dragSourceCell) return;
-    
+
     // Verify this tile was placed this turn
     const placedTile = gameState.placedThisTurn.find(p => p.tile.id === draggingTile.id);
     if (!placedTile) return;
 
     setGameState((prev) => {
       const newBoard = prev.board.map((r) => r.map((c) => ({ ...c })));
-      
+
       // Clear the tile from the board
       newBoard[dragSourceCell.row][dragSourceCell.col] = {
         ...newBoard[dragSourceCell.row][dragSourceCell.col],
@@ -516,11 +537,16 @@ function App() {
         isNewlyPlaced: false,
       };
 
+      // Reset blank tiles to empty letter when returning to rack
+      const tileToReturn = draggingTile.isBlank
+        ? { ...draggingTile, letter: '' }
+        : draggingTile;
+
       // Add tile back to rack
       const newPlayers = [...prev.players] as [Player, Player];
       newPlayers[prev.currentPlayerIndex] = {
         ...newPlayers[prev.currentPlayerIndex],
-        rack: [...newPlayers[prev.currentPlayerIndex].rack, draggingTile],
+        rack: [...newPlayers[prev.currentPlayerIndex].rack, tileToReturn],
       };
 
       // Remove from placed tiles tracking
@@ -543,6 +569,80 @@ function App() {
 
   // Ref for handleDropToRack for touch handlers
   const handleDropToRackRef = useRef<(() => void) | null>(null);
+
+  // Handle blank tile letter selection
+  const handleBlankLetterSelect = useCallback((letter: string) => {
+    if (!blankSelection) return;
+
+    const { tile, row, col, fromBoard } = blankSelection;
+
+    // Create updated tile with the selected letter (keeping isBlank=true for 0 points)
+    const updatedTile: Tile = {
+      ...tile,
+      letter: letter
+    };
+
+    setGameState((prev) => {
+      const newBoard = prev.board.map((r) => r.map((c) => ({ ...c })));
+
+      // If dragging from board, clear the source cell
+      if (fromBoard && dragSourceCell) {
+        newBoard[dragSourceCell.row][dragSourceCell.col] = {
+          ...newBoard[dragSourceCell.row][dragSourceCell.col],
+          tile: null,
+          isNewlyPlaced: false,
+        };
+      }
+
+      // Place the tile with selected letter
+      newBoard[row][col] = {
+        ...newBoard[row][col],
+        tile: updatedTile,
+        isNewlyPlaced: true,
+      };
+
+      // Only update rack if dragging from rack (not from board)
+      let newPlayers = prev.players;
+      if (!fromBoard) {
+        newPlayers = [...prev.players] as [Player, Player];
+        newPlayers[prev.currentPlayerIndex] = {
+          ...newPlayers[prev.currentPlayerIndex],
+          rack: newPlayers[prev.currentPlayerIndex].rack.filter(
+            (t) => t.id !== tile.id
+          ),
+        };
+      }
+
+      // Update placed tiles tracking
+      let newPlacedThisTurn: PlacedTile[];
+      if (fromBoard) {
+        // Moving tile on board - update the position and tile
+        newPlacedThisTurn = prev.placedThisTurn.map((p) =>
+          p.tile.id === tile.id ? { row, col, tile: updatedTile } : p
+        );
+      } else {
+        // New tile from rack
+        newPlacedThisTurn = [
+          ...prev.placedThisTurn,
+          { row, col, tile: updatedTile },
+        ];
+      }
+
+      return {
+        ...prev,
+        board: newBoard,
+        players: newPlayers,
+        placedThisTurn: newPlacedThisTurn,
+      };
+    });
+
+    // Clear all drag and selection state
+    setBlankSelection(null);
+    setDraggingTile(null);
+    setDragOverCell(null);
+    setDragSourceCell(null);
+    setMessage(null);
+  }, [blankSelection, dragSourceCell]);
 
   // Keep ref updated with latest handleDropTile
   useEffect(() => {
@@ -570,14 +670,18 @@ function App() {
         const newBoard = prev.board.map((r) => r.map((c) => ({ ...c })));
         const tilesReturned: Tile[] = [];
 
-        // Remove placed tiles from board
+        // Remove placed tiles from board and reset blank tiles
         for (const placed of prev.placedThisTurn) {
           newBoard[placed.row][placed.col] = {
             ...newBoard[placed.row][placed.col],
             tile: null,
             isNewlyPlaced: false,
           };
-          tilesReturned.push(placed.tile);
+          // Reset blank tiles to empty letter
+          const tileToReturn = placed.tile.isBlank
+            ? { ...placed.tile, letter: '' }
+            : placed.tile;
+          tilesReturned.push(tileToReturn);
         }
 
         // Return tiles to player's rack
@@ -627,9 +731,13 @@ function App() {
           const newBoard = prev.board.map((r) => r.map((c) => ({ ...c })));
           const tilesReturned: Tile[] = [];
 
-          // Remove placed tiles from board
+          // Remove placed tiles from board and reset blank tiles
           for (const placed of prev.placedThisTurn) {
-            tilesReturned.push(placed.tile);
+            // Reset blank tiles to empty letter
+            const tileToReturn = placed.tile.isBlank
+              ? { ...placed.tile, letter: '' }
+              : placed.tile;
+            tilesReturned.push(tileToReturn);
             newBoard[placed.row][placed.col] = {
               ...newBoard[placed.row][placed.col],
               tile: null,
@@ -756,14 +864,18 @@ function App() {
           const newBoard = prev.board.map((r) => r.map((c) => ({ ...c })));
           const tilesReturned: Tile[] = [];
 
-          // Remove placed tiles from board
+          // Remove placed tiles from board and reset blank tiles
           for (const placed of prev.placedThisTurn) {
             newBoard[placed.row][placed.col] = {
               ...newBoard[placed.row][placed.col],
               tile: null,
               isNewlyPlaced: false,
             };
-            tilesReturned.push(placed.tile);
+            // Reset blank tiles to empty letter
+            const tileToReturn = placed.tile.isBlank
+              ? { ...placed.tile, letter: '' }
+              : placed.tile;
+            tilesReturned.push(tileToReturn);
           }
 
           // Return tiles to the ORIGINAL player's rack (before turn switch)
@@ -1306,7 +1418,9 @@ function App() {
                   } as React.CSSProperties}
                 >
                   <div className="tile">
-                    <span className="tile-letter">{recalling.tile.letter}</span>
+                    <span className="tile-letter">
+                      {recalling.tile.isBlank && recalling.tile.letter === '' ? '?' : recalling.tile.letter}
+                    </span>
                     {!recalling.tile.isBlank && <span className="tile-points">{recalling.tile.points}</span>}
                   </div>
                 </div>
@@ -1506,10 +1620,17 @@ function App() {
           }}
         >
           <div className={`tile ${draggingTile.isBlank ? 'blank' : ''}`}>
-            <span className="tile-letter">{draggingTile.isBlank ? '?' : draggingTile.letter}</span>
-            <span className="tile-points">{draggingTile.points}</span>
+            <span className="tile-letter">
+              {draggingTile.isBlank && draggingTile.letter === '' ? '?' : draggingTile.letter}
+            </span>
+            {!draggingTile.isBlank && <span className="tile-points">{draggingTile.points}</span>}
           </div>
         </div>
+      )}
+
+      {/* Blank tile letter selector */}
+      {blankSelection && (
+        <BlankLetterSelector onSelectLetter={handleBlankLetterSelect} />
       )}
     </div>
   );
