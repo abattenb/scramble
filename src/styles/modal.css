@@ -351,9 +351,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-sm);
   z-index: var(--z-ready-overlay);
   background: var(--bg-ready-overlay);
+  pointer-events: auto;
 }
 
 .ready-btn {
@@ -367,11 +368,76 @@
   box-shadow: var(--shadow-xl);
   cursor: pointer;
   transition: all var(--transition-fast);
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
 }
 
 .ready-btn:hover {
   transform: scale(1.05);
   box-shadow: var(--shadow-button-gold);
+}
+
+/* Challenge overlay content */
+.challenge-overlay-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2xl);
+  padding: var(--space-2xl);
+  pointer-events: auto;
+}
+
+.challenge-prompt {
+  font-size: var(--font-size-3xl);
+  color: var(--color-gold);
+  font-weight: bold;
+  margin: 0;
+  text-shadow: var(--shadow-sm);
+}
+
+.challenge-buttons {
+  display: flex;
+  gap: var(--space-2xl);
+  pointer-events: auto;
+}
+
+.challenge-overlay-btn {
+  font-size: var(--font-size-2xl);
+  padding: var(--space-2xl) var(--space-5xl);
+  border-radius: var(--radius-xl);
+  font-weight: bold;
+  border: 3px solid;
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.challenge-overlay-btn.challenge-btn {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+  border-color: #d04854;
+  color: var(--color-white);
+}
+
+.challenge-overlay-btn.challenge-btn:hover {
+  background: linear-gradient(135deg, #ff5252 0%, #e04e5f 100%);
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(255, 107, 107, 0.4);
+}
+
+.challenge-overlay-btn.continue-btn {
+  background: var(--bg-button-green);
+  border-color: var(--color-success-darker);
+  color: var(--color-white);
+}
+
+.challenge-overlay-btn.continue-btn:hover {
+  background: var(--bg-button-green-hover);
+  transform: scale(1.05);
+  box-shadow: var(--shadow-button-green);
 }
 
 /* Responsive Styles */

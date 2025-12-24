@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(yarn build)"
+      "Bash(yarn build)",
+      "Bash(yarn tsc:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(yarn test:run:*)",
+      "Bash(yarn dev:*)"
     ]
   }
 }

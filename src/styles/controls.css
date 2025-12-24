@@ -52,6 +52,22 @@
   background: var(--bg-button-orange-hover);
 }
 
+.challenge-btn {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+  border-color: #d04854;
+  color: var(--color-white);
+}
+
+.challenge-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ff5252 0%, #e04e5f 100%);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+.challenge-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Responsive Styles */
 @media (max-width: 1090px) {
   .turn-controls {

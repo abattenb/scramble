@@ -1,12 +1,5 @@
-import type { BoardCell } from '../types';
+import type { BoardCell, WordInfo } from '../types';
 import { isValidWord } from './dictionary';
-
-export interface WordInfo {
-  word: string;
-  cells: BoardCell[];
-  score: number;
-  isValid: boolean;
-}
 
 export interface PlacementResult {
   isValid: boolean;
@@ -181,6 +174,166 @@ export function findWordsFromPlacement(
     };
   }
 
+  const totalScore = words.reduce((sum, w) => sum + w.score, 0);
+
+  // Bonus for using all 7 tiles
+  const finalScore = placedTiles.length === 7 ? totalScore + 50 : totalScore;
+
+  return { isValid: true, words, totalScore: finalScore, errors: [] };
+}
+
+/**
+ * Calculate score for placement without validating words against dictionary
+ * Used in tournament mode to allow invalid words through
+ * Validates placement rules only (alignment, gaps, connections)
+ */
+export function calculateTournamentScore(
+  board: BoardCell[][],
+  placedTiles: { row: number; col: number }[],
+  isFirstMove: boolean
+): PlacementResult {
+  if (placedTiles.length === 0) {
+    return { isValid: false, words: [], totalScore: 0, errors: ['No tiles placed'] };
+  }
+
+  // Check if all tiles are in the same row or column
+  const rows = [...new Set(placedTiles.map((t) => t.row))];
+  const cols = [...new Set(placedTiles.map((t) => t.col))];
+
+  const isHorizontal = rows.length === 1;
+  const isVertical = cols.length === 1;
+
+  if (!isHorizontal && !isVertical) {
+    return {
+      isValid: false,
+      words: [],
+      totalScore: 0,
+      errors: ['Tiles must be placed in a single row or column']
+    };
+  }
+
+  // Check for gaps in placement
+  if (isHorizontal) {
+    const row = rows[0];
+    const sortedCols = cols.sort((a, b) => a - b);
+    for (let c = sortedCols[0]; c <= sortedCols[sortedCols.length - 1]; c++) {
+      if (!board[row][c].tile) {
+        return {
+          isValid: false,
+          words: [],
+          totalScore: 0,
+          errors: ['Tiles must be placed without gaps']
+        };
+      }
+    }
+  } else {
+    const col = cols[0];
+    const sortedRows = rows.sort((a, b) => a - b);
+    for (let r = sortedRows[0]; r <= sortedRows[sortedRows.length - 1]; r++) {
+      if (!board[r][col].tile) {
+        return {
+          isValid: false,
+          words: [],
+          totalScore: 0,
+          errors: ['Tiles must be placed without gaps']
+        };
+      }
+    }
+  }
+
+  // Check first move goes through center
+  if (isFirstMove) {
+    const touchesCenter = placedTiles.some((t) => t.row === 7 && t.col === 7);
+    if (!touchesCenter) {
+      return {
+        isValid: false,
+        words: [],
+        totalScore: 0,
+        errors: ['First word must go through the center square']
+      };
+    }
+  }
+
+  // Check if placement connects to existing tiles (not first move)
+  if (!isFirstMove) {
+    const connectsToExisting = placedTiles.some((pos) => {
+      const { row, col } = pos;
+      // Check adjacent cells for existing tiles (not newly placed)
+      const adjacent = [
+        [row - 1, col],
+        [row + 1, col],
+        [row, col - 1],
+        [row, col + 1],
+      ];
+      return adjacent.some(([r, c]) => {
+        if (r < 0 || r > 14 || c < 0 || c > 14) return false;
+        const cell = board[r][c];
+        // Has a tile that wasn't just placed
+        return cell.tile && !placedTiles.some((p) => p.row === r && p.col === c);
+      });
+    });
+
+    if (!connectsToExisting) {
+      return {
+        isValid: false,
+        words: [],
+        totalScore: 0,
+        errors: ['Word must connect to existing tiles']
+      };
+    }
+  }
+
+  // Find all words formed
+  const words: WordInfo[] = [];
+  const placedSet = new Set(placedTiles.map((t) => `${t.row},${t.col}`));
+
+  // Get the main word (in the direction of placement)
+  const mainWord = getWordAt(
+    board,
+    placedTiles[0].row,
+    placedTiles[0].col,
+    isHorizontal ? 'horizontal' : 'vertical',
+    placedSet
+  );
+
+  if (mainWord && mainWord.cells.length > 1) {
+    words.push(mainWord);
+  }
+
+  // Get perpendicular words formed by each placed tile
+  for (const pos of placedTiles) {
+    const perpWord = getWordAt(
+      board,
+      pos.row,
+      pos.col,
+      isHorizontal ? 'vertical' : 'horizontal',
+      placedSet
+    );
+
+    if (perpWord && perpWord.cells.length > 1) {
+      // Check if this word is already added
+      const isDuplicate = words.some(
+        (w) => w.cells[0].row === perpWord.cells[0].row &&
+               w.cells[0].col === perpWord.cells[0].col &&
+               w.word === perpWord.word
+      );
+      if (!isDuplicate) {
+        words.push(perpWord);
+      }
+    }
+  }
+
+  if (words.length === 0) {
+    return {
+      isValid: false,
+      words: [],
+      totalScore: 0,
+      errors: ['Must form at least one word']
+    };
+  }
+
+  // SKIP dictionary validation - this is tournament mode
+  // Calculate total score normally
   const totalScore = words.reduce((sum, w) => sum + w.score, 0);
 
   // Bonus for using all 7 tiles

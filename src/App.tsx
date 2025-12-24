@@ -2,8 +2,8 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Tile, Player, GameState, PlacedTile } from './types';
 import { createTileBag, drawTiles } from './data/tiles';
 import { createEmptyBoard } from './data/board';
-import { loadDictionary } from './data/dictionary';
-import { findWordsFromPlacement } from './data/scoring';
+import { loadDictionary, isValidWord } from './data/dictionary';
+import { findWordsFromPlacement, calculateTournamentScore } from './data/scoring';
 import { GameBoard } from './components/GameBoard';
 import { PlayerRack } from './components/PlayerRack';
 import { GameMessage } from './components/GameMessage';
@@ -107,7 +107,13 @@ function loadGameState(): GameState | null {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      return JSON.parse(saved) as GameState;
+      const parsed = JSON.parse(saved) as GameState;
+      // Add defaults for new fields if they don't exist
+      return {
+        ...parsed,
+        lastMove: parsed.lastMove ?? null,
+        challengeAvailable: parsed.challengeAvailable ?? false,
+      };
     }
   } catch (error) {
     console.error('Failed to load game state:', error);
@@ -197,6 +203,8 @@ function initializeGame(player1Name: string, player2Name: string): GameState {
     isFirstMove: true,
     gameOver: false,
     winner: null,
+    lastMove: null,
+    challengeAvailable: false,
   };
 }
 
@@ -528,6 +536,8 @@ function App() {
         board: newBoard,
         players: newPlayers,
         placedThisTurn: newPlacedThisTurn,
+        // Disable challenge in tournament mode when player places first tile
+        challengeAvailable: gameMode === 'tournament' ? false : (prev.challengeAvailable ?? false),
       };
     });
 
@@ -535,7 +545,7 @@ function App() {
     setDragOverCell(null);
     setDragSourceCell(null);
     setMessage(null);
-  }, [draggingTile, gameState.board, dragSourceCell]);
+  }, [draggingTile, gameState.board, dragSourceCell, gameMode]);
 
   // Handle dropping a tile back to the rack (only for tiles placed this turn)
   const handleDropToRack = useCallback(() => {
@@ -722,7 +732,7 @@ function App() {
   }, [gameState.placedThisTurn, gameState.players, gameState.currentPlayerIndex]);
 
   const handleSubmitWord = useCallback(() => {
-    // Free play mode: skip dictionary validation entirely
+    // Tournament and non-freeplay modes need dictionary loaded
     if (gameMode !== 'freeplay' && !dictionaryLoaded) {
       setMessage({ text: 'Dictionary is still loading...', type: 'info' });
       return;
@@ -733,7 +743,67 @@ function App() {
       return;
     }
 
-    // Validate the placement
+    // Tournament mode: Skip dictionary validation, save move for potential challenge
+    if (gameMode === 'tournament') {
+      const placedPositions = gameState.placedThisTurn.map(p => ({ row: p.row, col: p.col }));
+      const tournamentResult = calculateTournamentScore(gameState.board, placedPositions, gameState.isFirstMove);
+
+      // Check placement rules only (not word validity)
+      if (!tournamentResult.isValid) {
+        setGameMessage({ text: tournamentResult.errors[0] || 'Invalid placement', type: 'error' });
+        return;
+      }
+
+      // Accept the play with calculated score (even if words are invalid)
+      // DO NOT draw tiles yet - wait for challenge phase
+      setGameState((prev) => {
+        const newBoard = prev.board.map((r) =>
+          r.map((c) => ({
+            ...c,
+            isNewlyPlaced: false,
+            placedByPlayer: c.isNewlyPlaced ? prev.currentPlayerIndex : c.placedByPlayer
+          }))
+        );
+
+        const newPlayers = [...prev.players] as [Player, Player];
+        newPlayers[prev.currentPlayerIndex] = {
+          ...newPlayers[prev.currentPlayerIndex],
+          score: newPlayers[prev.currentPlayerIndex].score + tournamentResult.totalScore,
+        };
+
+        const nextPlayerIndex = prev.currentPlayerIndex === 0 ? 1 : 0;
+        setRackRevealState({ activeRack: prev.currentPlayerIndex, readyPending: true });
+
+        return {
+          ...prev,
+          board: newBoard,
+          players: newPlayers,
+          currentPlayerIndex: nextPlayerIndex,
+          tileBag: prev.tileBag, // Keep bag unchanged - tiles drawn after challenge
+          turnNumber: prev.turnNumber + 1,
+          placedThisTurn: [],
+          isFirstMove: false,
+          lastMove: {
+            playerIndex: prev.currentPlayerIndex,
+            words: tournamentResult.words,
+            totalScore: tournamentResult.totalScore,
+            placedTiles: [...prev.placedThisTurn],
+            turnNumber: prev.turnNumber,
+            tilesNeedDrawing: true, // Flag that tiles need to be drawn
+          },
+          challengeAvailable: true,  // Next player can challenge
+        };
+      });
+
+      const wordsPlayed = tournamentResult.words.map((w) => w.word.toUpperCase()).join(', ');
+      setGameMessage({
+        text: `+${tournamentResult.totalScore} points! Words: ${wordsPlayed}`,
+        type: 'success'
+      });
+      return;
+    }
+
+    // Validate the placement (for non-tournament modes)
     const placedPositions = gameState.placedThisTurn.map((p) => ({ row: p.row, col: p.col }));
     const result = findWordsFromPlacement(gameState.board, placedPositions, gameState.isFirstMove);
 
@@ -981,6 +1051,7 @@ function App() {
             placedThisTurn: [],
             currentPlayerIndex: nextPlayerIndex,
             turnNumber: prev.turnNumber + 1,
+            challengeAvailable: false,
           };
         });
         setRecallingTiles([]);
@@ -995,6 +1066,7 @@ function App() {
           ...prev,
           currentPlayerIndex: nextPlayerIndex,
           turnNumber: prev.turnNumber + 1,
+          challengeAvailable: false,
         };
       });
     }
@@ -1061,6 +1133,7 @@ function App() {
         tileBag: newBag,
         currentPlayerIndex: nextPlayerIndex,
         turnNumber: prev.turnNumber + 1,
+        challengeAvailable: false,
       };
     });
 
@@ -1068,6 +1141,160 @@ function App() {
     setSelectedForExchange(new Set());
     setGameMessage({ text: `Exchanged ${selectedForExchange.size} tile(s)`, type: 'info' });
   }, [selectedForExchange, gameState.tileBag.length]);
+
+  const handleContinueWithoutChallenge = useCallback(() => {
+    if (!gameState.lastMove || !gameState.lastMove.tilesNeedDrawing) return;
+
+    const lastMove = gameState.lastMove;
+    const previousPlayerIndex = lastMove.playerIndex;
+
+    // Draw tiles for the previous player (their move was valid and not challenged)
+    setGameState((prev) => {
+      const tilesToDraw = Math.min(lastMove.placedTiles.length, prev.tileBag.length);
+      const { drawn, remaining } = drawTiles(prev.tileBag, tilesToDraw);
+
+      const newPlayers = [...prev.players] as [Player, Player];
+      newPlayers[previousPlayerIndex] = {
+        ...newPlayers[previousPlayerIndex],
+        rack: [...newPlayers[previousPlayerIndex].rack, ...drawn],
+      };
+
+      // Clear challenge and reveal current player's rack
+      setRackRevealState({ activeRack: prev.currentPlayerIndex, readyPending: false });
+
+      return {
+        ...prev,
+        players: newPlayers,
+        tileBag: remaining,
+        lastMove: null,
+        challengeAvailable: false,
+      };
+    });
+  }, [gameState]);
+
+  const handleWordChallenge = useCallback(() => {
+    if (!gameState.lastMove || !gameState.challengeAvailable) return;
+
+    const lastMove = gameState.lastMove;
+    const challengedPlayerIndex = lastMove.playerIndex;
+    const challengerIndex = gameState.currentPlayerIndex;
+
+    // Validate ALL words from the last move
+    const allWordsValid = lastMove.words.every(wordInfo =>
+      isValidWord(wordInfo.word)
+    );
+
+    if (!allWordsValid) {
+      // Challenger is RIGHT - at least one word was invalid
+      const invalidWords = lastMove.words
+        .filter(w => !isValidWord(w.word))
+        .map(w => w.word.toUpperCase())
+        .join(', ');
+
+      setGameMessage({
+        text: `Challenge successful! Invalid: ${invalidWords}`,
+        type: 'success'
+      });
+
+      setGameState((prev) => {
+        const newBoard = prev.board.map((r) => r.map((c) => ({ ...c })));
+        const tilesReturned: Tile[] = [];
+
+        // Remove ALL tiles from the challenged move (treat as a unit)
+        for (const placed of lastMove.placedTiles) {
+          newBoard[placed.row][placed.col] = {
+            ...newBoard[placed.row][placed.col],
+            tile: null,
+            isNewlyPlaced: false,
+            placedByPlayer: undefined,
+          };
+          // Reset blank tiles to empty letter
+          const tileToReturn = placed.tile.isBlank
+            ? { ...placed.tile, letter: '' }
+            : placed.tile;
+          tilesReturned.push(tileToReturn);
+        }
+
+        // Deduct points from challenged player and return tiles to rack
+        const newPlayers = [...prev.players] as [Player, Player];
+        newPlayers[challengedPlayerIndex] = {
+          ...newPlayers[challengedPlayerIndex],
+          score: Math.max(0, newPlayers[challengedPlayerIndex].score - lastMove.totalScore),
+          rack: [...newPlayers[challengedPlayerIndex].rack, ...tilesReturned],
+        };
+
+        // Check if board is now empty (first move was invalidated)
+        const boardHasTiles = newBoard.some(row => row.some(cell => cell.tile !== null));
+
+        // Current player continues their turn (reveal their rack)
+        setRackRevealState({ activeRack: challengerIndex, readyPending: false });
+
+        return {
+          ...prev,
+          board: newBoard,
+          players: newPlayers,
+          lastMove: null,
+          challengeAvailable: false,
+          isFirstMove: !boardHasTiles, // Reset to true if board is empty
+        };
+      });
+    } else {
+      // Challenger is WRONG - all words were valid
+      // Draw tiles for the challenged player NOW (their move was valid)
+      setGameMessage({
+        text: `Challenge failed! All words valid. Turn lost.`,
+        type: 'error'
+      });
+
+      setGameState((prev) => {
+        // Return any tiles challenger placed (if any) back to their rack
+        const newBoard = prev.board.map((r) => r.map((c) => ({ ...c })));
+        const tilesReturned: Tile[] = [];
+
+        for (const placed of prev.placedThisTurn) {
+          newBoard[placed.row][placed.col] = {
+            ...newBoard[placed.row][placed.col],
+            tile: null,
+            isNewlyPlaced: false,
+          };
+          const tileToReturn = placed.tile.isBlank
+            ? { ...placed.tile, letter: '' }
+            : placed.tile;
+          tilesReturned.push(tileToReturn);
+        }
+
+        const newPlayers = [...prev.players] as [Player, Player];
+        newPlayers[challengerIndex] = {
+          ...newPlayers[challengerIndex],
+          rack: [...newPlayers[challengerIndex].rack, ...tilesReturned],
+        };
+
+        // Draw tiles for the challenged player (their turn ended successfully)
+        const tilesToDraw = Math.min(lastMove.placedTiles.length, prev.tileBag.length);
+        const { drawn, remaining } = drawTiles(prev.tileBag, tilesToDraw);
+        newPlayers[challengedPlayerIndex] = {
+          ...newPlayers[challengedPlayerIndex],
+          rack: [...newPlayers[challengedPlayerIndex].rack, ...drawn],
+        };
+
+        // Switch back to challenged player (they get another turn as penalty)
+        const nextPlayerIndex = challengedPlayerIndex;
+        setRackRevealState({ activeRack: challengerIndex, readyPending: true });
+
+        return {
+          ...prev,
+          board: newBoard,
+          players: newPlayers,
+          currentPlayerIndex: nextPlayerIndex,
+          placedThisTurn: [],
+          turnNumber: prev.turnNumber + 1,
+          tileBag: remaining,
+          lastMove: null,
+          challengeAvailable: false,
+        };
+      });
+    }
+  }, [gameState]);
 
   const handleStartGame = useCallback(() => {
     // Save player settings for future sessions
@@ -1269,10 +1496,10 @@ function App() {
                       className="game-mode-select"
                       data-testid="game-mode-select"
                     >
-                      <option value="standard">Standard - Dictionary validated</option>
+                      <option value="tournament">Tournament - Challenge words</option>
                       <option value="expert">Expert - Wrong word loses turn</option>
+                      <option value="standard">Standard - Dictionary validated</option>
                       <option value="freeplay">Free Play - No dictionary checks</option>
-                      <option value="tournament" disabled>Tournament - Coming soon</option>
                     </select>
                   </div>
                   <label className="toggle-setting">
@@ -1550,6 +1777,10 @@ function App() {
             const isCurrentPlayer = gameState.currentPlayerIndex === index;
             // Show Ready button overlay if hidePlayerTiles is enabled and it's the current player's turn, but rackRevealState is not yet updated
             const showReadyButton = hidePlayerTiles && rackRevealState.readyPending && isCurrentPlayer && rackRevealState.activeRack !== index;
+            // Show challenge overlay in tournament mode when it's the current player's turn and challenge is available
+            const showChallengeOverlay = gameMode === 'tournament' && isCurrentPlayer && gameState.challengeAvailable && gameState.lastMove;
+            // Show either ready button or challenge overlay
+            const showOverlay = showReadyButton || showChallengeOverlay;
             // Obscure rack only if hidePlayerTiles is enabled and (not current player OR showing Ready button)
             const isObscuredRack = (hidePlayerTiles && !isCurrentPlayer) || showReadyButton;
             // If obscured, blank out tiles and points
@@ -1576,7 +1807,7 @@ function App() {
                 </div>
                 <div style={{
                   position: 'relative',
-                  ...(isObscuredRack && !showReadyButton ? { pointerEvents: 'none', filter: 'blur(0.5px)' } : {})
+                  ...(isObscuredRack && !showOverlay ? { pointerEvents: 'none', filter: 'blur(0.5px)' } : {})
                 }}>
                   <PlayerRack
                     tiles={rackTiles}
@@ -1597,14 +1828,33 @@ function App() {
                     tilesPlacedThisTurn={gameState.placedThisTurn.length > 0}
                     onDropToRack={index === gameState.currentPlayerIndex ? handleDropToRack : undefined}
                   />
-                  {showReadyButton && (
+                  {showOverlay && (
                     <div className="ready-overlay">
-                      <button
-                        className="ready-btn"
-                        onClick={() => setRackRevealState({ activeRack: index, readyPending: false })}
-                      >
-                        {player.name} ready!
-                      </button>
+                      {showChallengeOverlay ? (
+                        <div className="challenge-overlay-content">
+                          <div className="challenge-buttons">
+                            <button
+                              className="challenge-overlay-btn challenge-btn"
+                              onClick={handleWordChallenge}
+                            >
+                              Word Check
+                            </button>
+                            <button
+                              className="challenge-overlay-btn continue-btn"
+                              onClick={handleContinueWithoutChallenge}
+                            >
+                              Continue
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          className="ready-btn"
+                          onClick={() => setRackRevealState({ activeRack: index, readyPending: false })}
+                        >
+                          {player.name} ready!
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

@@ -60,16 +60,23 @@ describe('Scramble Game - Basic Functionality', () => {
     });
   });
 
-  // TEST 4: Expert mode toggle works
-  it('enables expert mode when toggle is checked', async () => {
+  // TEST 4: Game mode dropdown works
+  it('allows selecting different game modes', async () => {
     const user = userEvent.setup();
     renderWithProviders(<App />);
 
-    const expertModeToggle = screen.getByTestId('expert-mode-toggle');
-    expect(expertModeToggle).not.toBeChecked();
+    const gameModeSelect = screen.getByTestId('game-mode-select') as HTMLSelectElement;
+    // Default depends on localStorage, but we can select different modes
+    expect(gameModeSelect).toBeInTheDocument();
 
-    await user.click(expertModeToggle);
-    expect(expertModeToggle).toBeChecked();
+    await user.selectOptions(gameModeSelect, 'expert');
+    expect(gameModeSelect.value).toBe('expert');
+
+    await user.selectOptions(gameModeSelect, 'standard');
+    expect(gameModeSelect.value).toBe('standard');
+
+    await user.selectOptions(gameModeSelect, 'tournament');
+    expect(gameModeSelect.value).toBe('tournament');
   });
 
   // TEST 5: Hide player tiles toggle works
@@ -136,8 +143,8 @@ describe('Scramble Game - Basic Functionality', () => {
     const user = userEvent.setup();
     renderWithProviders(<App />);
 
-    const expertModeToggle = screen.getByTestId('expert-mode-toggle');
-    await user.click(expertModeToggle);
+    const gameModeSelect = screen.getByTestId('game-mode-select');
+    await user.selectOptions(gameModeSelect, 'expert');
 
     const hidePlayerTilesToggle = screen.getByTestId('hide-player-tiles-toggle');
     await user.click(hidePlayerTilesToggle);
@@ -150,7 +157,7 @@ describe('Scramble Game - Basic Functionality', () => {
       expect(savedSettings).toBeTruthy();
 
       const parsed = JSON.parse(savedSettings!);
-      expect(parsed.expertMode).toBe(true);
+      expect(parsed.gameMode).toBe('expert');
       expect(parsed.hidePlayerTiles).toBe(true);
     });
   });
@@ -397,9 +404,9 @@ describe('Scramble Game - Scoring & Validation', () => {
     const user = userEvent.setup();
     renderWithProviders(<App />);
 
-    const expertToggle = screen.getByTestId('expert-mode-toggle');
-    await user.click(expertToggle);
-    expect(expertToggle).toBeChecked();
+    const gameModeSelect = screen.getByTestId('game-mode-select') as HTMLSelectElement;
+    await user.selectOptions(gameModeSelect, 'expert');
+    expect(gameModeSelect.value).toBe('expert');
 
     const startButton = screen.getByTestId('start-game-btn');
     await user.click(startButton);
@@ -409,7 +416,7 @@ describe('Scramble Game - Scoring & Validation', () => {
       const settings = localStorage.getItem('scramble-game-settings');
       expect(settings).toBeTruthy();
       const parsed = JSON.parse(settings!);
-      expect(parsed.expertMode).toBe(true);
+      expect(parsed.gameMode).toBe('expert');
     });
   });
 

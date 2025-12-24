@@ -42,6 +42,22 @@ export interface PlacedTile {
   tile: Tile;
 }
 
+export interface WordInfo {
+  word: string;
+  cells: BoardCell[];
+  score: number;
+  isValid: boolean;
+}
+
+export interface LastMove {
+  playerIndex: number;
+  words: WordInfo[];
+  placedTiles: PlacedTile[];
+  totalScore: number;
+  turnNumber: number;
+  tilesNeedDrawing: boolean; // For tournament mode - tiles drawn after challenge phase
+}
+
 export interface GameState {
   board: BoardCell[][];
   players: [Player, Player];
@@ -52,4 +68,6 @@ export interface GameState {
   isFirstMove: boolean;
   gameOver: boolean;
   winner: number | null;
+  lastMove: LastMove | null;
+  challengeAvailable: boolean;
 }
