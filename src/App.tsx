@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import type { Tile, Player, GameState, PlacedTile } from './types';
 import { createTileBag, drawTiles } from './data/tiles';
 import { createEmptyBoard } from './data/board';
@@ -45,6 +45,7 @@ interface GameSettings {
   hidePlayerTiles: boolean;
   randomizePlayer1: boolean;
   showPlayerColorOnTiles: boolean;
+  showScorePreview: boolean;
 }
 
 // Available player colors
@@ -66,7 +67,7 @@ function saveGameSettings(settings: GameSettings): void {
 }
 
 function loadGameSettings(): GameSettings {
-  const defaults: GameSettings = { gameMode: 'standard', hidePlayerTiles: false, randomizePlayer1: false, showPlayerColorOnTiles: false };
+  const defaults: GameSettings = { gameMode: 'standard', hidePlayerTiles: false, randomizePlayer1: false, showPlayerColorOnTiles: false, showScorePreview: true };
   try {
     const saved = localStorage.getItem(GAME_SETTINGS_KEY);
     if (saved) {
@@ -242,6 +243,7 @@ function App() {
   const [hidePlayerTiles, setHidePlayerTiles] = useState<boolean>(() => loadGameSettings().hidePlayerTiles);
   const [randomizePlayer1, setRandomizePlayer1] = useState<boolean>(() => loadGameSettings().randomizePlayer1);
   const [showPlayerColorOnTiles, setShowPlayerColorOnTiles] = useState<boolean>(() => loadGameSettings().showPlayerColorOnTiles);
+  const [showScorePreview, setShowScorePreview] = useState<boolean>(() => loadGameSettings().showScorePreview);
   const [showAdditionalOptions, setShowAdditionalOptions] = useState(false);
   const [draggingTile, setDraggingTile] = useState<Tile | null>(null);
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
@@ -277,6 +279,14 @@ function App() {
     col: number;
     fromBoard: boolean;
   } | null>(null);
+
+  // Calculate score preview for placed tiles
+  const previewScore = useMemo(() => {
+    if (!showScorePreview || gameState.placedThisTurn.length === 0) return 0;
+    const placedPositions = gameState.placedThisTurn.map(p => ({ row: p.row, col: p.col }));
+    const result = calculateTournamentScore(gameState.board, placedPositions, gameState.isFirstMove);
+    return result.totalScore;
+  }, [showScorePreview, gameState.placedThisTurn, gameState.board, gameState.isFirstMove]);
 
   // Auto-dismiss message after 5 seconds
   useEffect(() => {
@@ -1313,7 +1323,7 @@ function App() {
       player1: { name: name1, color: color1 },
       player2: { name: name2, color: color2 }
     });
-    saveGameSettings({ gameMode, hidePlayerTiles, randomizePlayer1, showPlayerColorOnTiles });
+    saveGameSettings({ gameMode, hidePlayerTiles, randomizePlayer1, showPlayerColorOnTiles, showScorePreview });
 
     clearGameState();
     const newGame = initializeGame(name1, name2);
@@ -1335,7 +1345,7 @@ function App() {
     } else {
       setRackRevealState({ activeRack: 0, readyPending: false });
     }
-  }, [player1Name, player2Name, player1Color, player2Color, gameMode, hidePlayerTiles, randomizePlayer1, showPlayerColorOnTiles]);
+  }, [player1Name, player2Name, player1Color, player2Color, gameMode, hidePlayerTiles, randomizePlayer1, showPlayerColorOnTiles, showScorePreview]);
 
   const handleNewGame = useCallback(() => {
     // Show start modal when clicking New Game
@@ -1552,6 +1562,18 @@ function App() {
                     <span className="toggle-label">
                       Show player color on tiles
                       <span className="toggle-subtext">Color tiles after successful word</span>
+                    </span>
+                  </label>
+                  <label className="toggle-setting">
+                    <input
+                      type="checkbox"
+                      checked={showScorePreview}
+                      onChange={(e) => setShowScorePreview(e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                    <span className="toggle-label">
+                      Show score preview
+                      <span className="toggle-subtext">Display potential points while placing tiles</span>
                     </span>
                   </label>
                 </div>
@@ -1798,7 +1820,14 @@ function App() {
                 >
                   <span className="score-value" style={{
                     color: getPlayerColor(player.name)
-                  }}>{player.score}</span>
+                  }}>
+                    {player.score}
+                    {showScorePreview && index === gameState.currentPlayerIndex && previewScore > 0 && (
+                      <span className="score-preview" style={{
+                        color: getPlayerColor(player.name)
+                      }}> +{previewScore}</span>
+                    )}
+                  </span>
                   {index === gameState.currentPlayerIndex && (
                     <span className="turn-indicator" style={{
                       background: getPlayerColor(player.name)

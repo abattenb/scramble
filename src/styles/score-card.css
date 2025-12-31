@@ -47,6 +47,34 @@
   text-shadow: var(--shadow-sm);
 }
 
+.score-preview {
+  display: inline-block;
+  font-size: var(--font-size-4xl);
+  font-weight: 600;
+  margin-left: var(--space-sm);
+  opacity: 0.9;
+  vertical-align: middle;
+  animation: soft-bounce 3s cubic-bezier(0.28, 0.84, 0.42, 1) infinite;
+}
+
+@keyframes soft-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  25% {
+    transform: translateY(-8px);
+  }
+  35% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(-4px);
+  }
+  55% {
+    transform: translateY(0);
+  }
+}
+
 .score-card .turn-indicator {
   background: var(--color-gold);
   color: var(--color-brown-dark);
@@ -73,6 +101,10 @@
   .score-value {
     font-size: 44px;
   }
+
+  .score-preview {
+    font-size: var(--font-size-3xl);
+  }
 }
 
 @media (max-width: 840px) {
@@ -87,6 +119,10 @@
 
   .score-name {
     font-size: 13px;
+  }
+
+  .score-preview {
+    font-size: var(--font-size-4xl);
   }
 }
 
@@ -110,5 +146,9 @@
   .score-card .turn-indicator {
     font-size: 9px;
     padding: var(--space-xs) var(--space-md);
+  }
+
+  .score-preview {
+    font-size: var(--font-size-2xl);
   }
 }
