@@ -50,12 +50,12 @@ interface GameSettings {
 
 // Available player colors
 const PLAYER_COLORS = [
-  '#ffd700', // Gold
-  '#4caf50', // Green
-  '#2196f3', // Blue
-  '#f44336', // Red
-  '#ba68c8', // Purple (lighter tint)
-  '#ff9800', // Orange
+  '#00838f', // Teal
+  '#d32f2f', // Red
+  '#388e3c', // Green
+  '#1976d2', // Blue
+  '#8e24aa', // Purple
+  '#f57c00', // Orange
 ];
 
 function saveGameSettings(settings: GameSettings): void {

@@ -64,10 +64,20 @@ export function TileComponent({ tile, isDragging, isSelected, onDragStart, onDra
     ? { color: playerColor }
     : {};
 
+  // Build custom style for tile with player color (faint background + border)
+  // Must use 'background' to override the CSS gradient
+  const tileStyle: React.CSSProperties = playerColor
+    ? {
+        background: `linear-gradient(135deg, ${playerColor}1A 0%, ${playerColor}26 100%), linear-gradient(135deg, #f5deb3 0%, #deb887 100%)`,
+        borderColor: playerColor
+      }
+    : {};
+
   return (
     <div
       ref={tileRef}
       className={`tile ${isDragging ? 'dragging' : ''} ${tile.isBlank ? 'blank' : ''} ${isSelected ? 'selected' : ''}`}
+      style={tileStyle}
       draggable={!onClick}
       onDragStart={(e) => onDragStart?.(e, tile)}
       onDragEnd={(e) => onDragEnd?.(e)}

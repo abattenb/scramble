@@ -47,12 +47,12 @@ export function GameBoard({
     }
     // Load player settings to get colors
     const PLAYER_COLORS = [
-      '#ffd700', // Gold
-      '#4caf50', // Green
-      '#2196f3', // Blue
-      '#f44336', // Red
-      '#ba68c8', // Purple
-      '#ff9800', // Orange
+      '#00838f', // Teal
+      '#d32f2f', // Red
+      '#388e3c', // Green
+      '#1976d2', // Blue
+      '#8e24aa', // Purple
+      '#f57c00', // Orange
     ];
     try {
       const saved = localStorage.getItem('scramble-player-names');

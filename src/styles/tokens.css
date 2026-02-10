@@ -20,12 +20,12 @@
   --color-text-light: #f5f5f5;
 
   /* Player Colors (from PLAYER_COLORS array in App.tsx) */
-  --color-player-1: #ffd700;
-  --color-player-2: #4caf50;
-  --color-player-3: #2196f3;
-  --color-player-4: #f44336;
-  --color-player-5: #ba68c8;
-  --color-player-6: #ff9800;
+  --color-player-1: #00838f;
+  --color-player-2: #d32f2f;
+  --color-player-3: #388e3c;
+  --color-player-4: #1976d2;
+  --color-player-5: #8e24aa;
+  --color-player-6: #f57c00;
 
   /* Semantic Colors */
   --color-success: #4caf50;
